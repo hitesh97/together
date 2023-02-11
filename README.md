@@ -1,2 +1,0 @@
-# together
- A multiplayer experience.
