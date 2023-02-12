@@ -14,7 +14,7 @@ export class TogetherApp extends EventEmitter {
 	private canvas = document.createElement('canvas')
 	private now: number
 	private raf: any
-	private speed = 0.618
+	private speed = 0.575
 	private startTime = date.getTime()
 
 	private currentStrokeId: string | null = null
