@@ -37,23 +37,6 @@ export function useYjs(app: TogetherApp) {
 		}
 	})
 
-	// Handle cursor updates
-	useEffect(() => {
-		const fn = (userCursor: UserCursor) => {
-			const yCursor = new Y.Map()
-			for (const key in userCursor) {
-				yCursor.set(key, userCursor[key as keyof UserCursor])
-			}
-
-			yUserCursors.set(userCursor.id, yCursor)
-		}
-
-		app.on('updated-user-cursor', fn)
-		return () => {
-			app.off('updated-user-cursor', fn)
-		}
-	})
-
 	// Subscribe to changes in the yStrokes array
 	useEffect(() => {
 		function handleChange(a: Y.YMapEvent<Y.Map<any>>, b: Y.Transaction) {
@@ -72,28 +55,45 @@ export function useYjs(app: TogetherApp) {
 		}
 	}, [])
 
+	// Handle cursor updates
+
+	// useEffect(() => {
+	// 	const fn = (userCursor: UserCursor) => {
+	// 		const yCursor = new Y.Map()
+	// 		for (const key in userCursor) {
+	// 			yCursor.set(key, userCursor[key as keyof UserCursor])
+	// 		}
+	// 		yUserCursors.set(userCursor.id, yCursor)
+	// 	}
+	// 	app.on('updated-user-cursor', fn)
+	// 	return () => {
+	// 		app.off('updated-user-cursor', fn)
+	// 	}
+	// })
+
 	// Subscribe to changes in the yUserCursors array
-	useEffect(() => {
-		function handleChange(a: Y.YMapEvent<Y.Map<any>>) {
-			a.changes.keys.forEach((_, id) => {
-				if (_.action === 'delete') {
-					app.deleteUserCursor(_.oldValue.id)
-					return
-				}
 
-				const cursor = yUserCursors.get(id)
-				if (cursor) {
-					app.putUserCursor(cursor.toJSON() as UserCursor, true)
-				}
-			})
-		}
+	// useEffect(() => {
+	// 	function handleChange(a: Y.YMapEvent<Y.Map<any>>) {
+	// 		a.changes.keys.forEach((_, id) => {
+	// 			if (_.action === 'delete') {
+	// 				app.deleteUserCursor(_.oldValue.id)
+	// 				return
+	// 			}
 
-		yUserCursors.observe(handleChange)
+	// 			const cursor = yUserCursors.get(id)
+	// 			if (cursor) {
+	// 				app.putUserCursor(cursor.toJSON() as UserCursor, true)
+	// 			}
+	// 		})
+	// 	}
 
-		return () => {
-			yUserCursors.unobserve(handleChange)
-		}
-	}, [])
+	// 	yUserCursors.observe(handleChange)
+
+	// 	return () => {
+	// 		yUserCursors.unobserve(handleChange)
+	// 	}
+	// }, [])
 
 	// Handle the provider connection. Include a listener
 	// on the window to disconnect automatically when the
@@ -102,19 +102,18 @@ export function useYjs(app: TogetherApp) {
 		function handleConnect() {
 			setIsSynced(true)
 
-			const now = Date.now()
-
-			yUserCursors.forEach((cursor, id) => {
-				const lastChanged = cursor.get('lastChanged') as number
-				// on connect, purge all cursors that haven't been updated in 5 minutes
-				if (now - lastChanged > 1000 * 60 * 5) {
-					yUserCursors.delete(id as string)
-				}
-			})
-
 			yStrokes.forEach((yStroke) => {
 				app.putStroke(yStroke.toJSON() as Stroke, true)
 			})
+
+			// const now = Date.now()
+			// yUserCursors.forEach((cursor, id) => {
+			// 	const lastChanged = cursor.get('lastChanged') as number
+			// 	// on connect, purge all cursors that haven't been updated in 5 minutes
+			// 	if (now - lastChanged > 1000 * 60 * 5) {
+			// 		yUserCursors.delete(id as string)
+			// 	}
+			// })
 		}
 
 		function handleDisconnect() {
