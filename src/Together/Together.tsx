@@ -33,13 +33,14 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 					{TOOLS.map((value) => (
 						<button
 							key={value}
+							title={value}
 							data-active={tool === value}
 							onClick={() => {
 								setTool(value)
 								app.tool = value
 							}}
 						>
-							{value[0].toUpperCase() + value.slice(1)}
+							<img src={`/tool-${value}.svg`} alt={value} />
 						</button>
 					))}
 				</div>
@@ -50,6 +51,7 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 						{COLORS.map((value) => (
 							<button
 								key={value}
+								title={value}
 								data-active={color === value}
 								onClick={() => {
 									setColor(value)
@@ -60,11 +62,12 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 						))}
 					</div>
 				)}
-				<div className="vertical-divider" />
+				{tool === 'ink' && <div className="vertical-divider" />}
 				<div className="sizes">
 					{SIZES.map((value) => (
 						<button
 							key={value}
+							title={value + ''}
 							data-active={size === value}
 							data-size={value}
 							onClick={() => {
@@ -75,6 +78,14 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 					))}
 				</div>
 			</div>
+			<a
+				href="https://twitter.com/tldraw"
+				target="_blank"
+				rel="nofollow noopener"
+				className="by-tldraw"
+			>
+				<img src="/by-tldraw.svg" alt="by tldraw" />
+			</a>
 		</div>
 	)
 }

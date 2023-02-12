@@ -15,6 +15,11 @@ button {
 	background: transparent;
 }
 
+button > img {
+	height: 16px;
+	width: 16px;
+}
+
 .app {
 	position: fixed;
 	inset: 0px;
@@ -76,7 +81,7 @@ button {
 }
 
 .tools button[data-active='true'] {
-	background-color: rgba(0, 0, 0, 0.2);
+	background-color: rgba(0, 0, 0, 0.15);
 	border-radius: 9px;
 }
 
@@ -124,7 +129,7 @@ button {
 }
 
 .colors button[data-active='true'] {
-	background-color: rgba(0, 0, 0, 0.2);
+	background-color: rgba(0, 0, 0, 0.15);
 	border-radius: 9px;
 	padding: 4px;
 }
@@ -196,4 +201,17 @@ button {
 	width: 1px;
 	background-color: rgba(0, 0, 0, 0.1);
 	margin: 0px 8px;
+}
+
+.by-tldraw {
+	position: absolute;
+	bottom: 16px;
+	right: 16px;
+	height: 32px;
+	cursor: pointer;
+	z-index: 300;
+}
+
+.by-tldraw img {
+	height: 100%;
 }
