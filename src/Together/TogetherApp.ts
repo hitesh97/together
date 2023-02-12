@@ -113,14 +113,21 @@ export class TogetherApp extends EventEmitter {
 	 */
 	putStroke = (stroke: Stroke, external = true) => {
 		if (stroke.done) {
-			// Create a baked storke
-			const bakedStroke = this.getBakedStroke(stroke)
-			this.bakedStrokes.set(bakedStroke.id, bakedStroke)
-
 			// Pull from strokes
 			if (this.strokes.has(stroke.id)) {
 				this.strokes.delete(stroke.id)
 			}
+
+			// Create a baked storke
+			const bbox = this.getBoundingBoxFromStroke(stroke)
+
+			// Only add the bake stroke if it's on screen
+			if (bbox.maxY - this.getYOffsetFromTime(stroke.createdAt) > 0) {
+				const bakedStroke = this.getBakedStroke(stroke)
+				this.bakedStrokes.set(bakedStroke.id, bakedStroke)
+			}
+
+			return
 		} else {
 			// Or else add it to the rendering strokes
 			this.strokes.set(stroke.id, stroke)
@@ -318,10 +325,9 @@ export class TogetherApp extends EventEmitter {
 	 * @private
 	 */
 	private getBakedStroke(stroke: Stroke): BakedStroke {
-		const cvs = document.createElement('canvas') as HTMLCanvasElement
-
 		const bbox = this.getBoundingBoxFromStroke(stroke)
 
+		const cvs = document.createElement('canvas') as HTMLCanvasElement
 		cvs.width = bbox.maxX - bbox.minX
 		cvs.height = bbox.maxY - bbox.minY
 
