@@ -54,6 +54,12 @@ export class TogetherApp extends EventEmitter {
 			if (doPut) {
 				this.putStroke(stroke, false)
 			}
+
+			// When we see a looooong stroke, stop and start a new one
+			if (stroke.points.length > 1000) {
+				this.completeStroke()
+				this.beginStroke()
+			}
 		}
 
 		if (doPut) {
@@ -169,37 +175,7 @@ export class TogetherApp extends EventEmitter {
 
 		e.currentTarget.setPointerCapture(e.pointerId)
 
-		this.state = 'pointing'
-
-		// Create a new current stroke
-
-		this.currentStrokeId = nanoid()
-		const time = Date.now()
-
-		this.putStroke(
-			{
-				id: this.currentStrokeId,
-				createdAt: time - this.startTime,
-				tool: this.tool,
-				size: this.size,
-				color: this.color,
-				points: [
-					[
-						pointer.x,
-						pointer.y + this.getYOffsetFromTime(Date.now()),
-						pointer.p,
-					],
-				],
-				done: false,
-				bbox: {
-					minX: pointer.x,
-					minY: pointer.y,
-					maxX: pointer.x + 1,
-					maxY: pointer.y + 1000,
-				},
-			},
-			false
-		)
+		this.beginStroke()
 	}
 
 	/**
@@ -231,6 +207,45 @@ export class TogetherApp extends EventEmitter {
 
 		e.currentTarget.releasePointerCapture(e.pointerId)
 
+		this.completeStroke()
+	}
+
+	private beginStroke() {
+		const { pointer } = this
+
+		this.state = 'pointing'
+
+		this.currentStrokeId = nanoid()
+
+		const time = Date.now()
+
+		this.putStroke(
+			{
+				id: this.currentStrokeId,
+				createdAt: time - this.startTime,
+				tool: this.tool,
+				size: this.size,
+				color: this.color,
+				points: [
+					[
+						pointer.x,
+						pointer.y + this.getYOffsetFromTime(Date.now()),
+						pointer.p,
+					],
+				],
+				done: false,
+				bbox: {
+					minX: pointer.x,
+					minY: pointer.y,
+					maxX: pointer.x + 1,
+					maxY: pointer.y + 1000,
+				},
+			},
+			false
+		)
+	}
+
+	private completeStroke() {
 		const { currentStrokeId } = this
 
 		if (this.state === 'pointing' && currentStrokeId) {
