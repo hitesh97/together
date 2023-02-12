@@ -243,6 +243,7 @@ button > img {
   align-items: center;
   text-decoration: none;
   gap: 4px;
+  color: black;
 }
 
 .tldraw {
