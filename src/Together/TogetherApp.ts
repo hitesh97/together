@@ -1,6 +1,6 @@
 import getStroke from 'perfect-freehand'
 import { BBox, Stroke } from './types'
-import { DPR } from './constants'
+import { COLORS, DPR, SIZES, TOOLS } from './constants'
 import { nanoid } from 'nanoid'
 import { EventEmitter } from 'eventemitter3'
 
@@ -24,9 +24,9 @@ export class TogetherApp extends EventEmitter {
 	private pointingId = -1
 
 	// Styles
-	color = '#333'
-	tool: 'ink' | 'eraser' = 'ink'
-	size = 10
+	color: typeof COLORS[number] = COLORS[0]
+	tool: typeof TOOLS[number] = TOOLS[0]
+	size: typeof SIZES[number] = SIZES[1]
 
 	constructor() {
 		super()
