@@ -18,7 +18,7 @@ import { yStrokes, provider, yUsers } from '../utils/y'
 import { nanoid } from 'nanoid'
 
 export function useYjs(app: TogetherApp) {
-  const [isSynced, setIsSynced] = useState(false)
+  const [status, setStatus] = useState('connecting')
   const [users, setUsers] = useState<number>(1)
 
   // Handle stroke updates
@@ -98,7 +98,7 @@ export function useYjs(app: TogetherApp) {
         app.putStroke(yStroke.toJSON() as Stroke, true)
       })
 
-      setIsSynced(true)
+      setStatus('connected')
       resetIdleTimeout()
     }
 
@@ -112,7 +112,7 @@ export function useYjs(app: TogetherApp) {
 
       provider.off('sync', handleConnect)
       provider.disconnect()
-      setIsSynced(false)
+      setStatus('disconnected')
     }
 
     let timeout: any = -1
@@ -141,5 +141,5 @@ export function useYjs(app: TogetherApp) {
     }
   }, [])
 
-  return { isSynced, users }
+  return { status, users }
 }
