@@ -11,15 +11,8 @@ export interface TogetherProps {
 }
 
 export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
-	const { app, rContainer } = useTogether({ onMount, onStrokeUpdate })
-
-	const [tool, setTool] = useState<typeof TOOLS[number]>(TOOLS[0])
-	const [color, setColor] = useState<typeof COLORS[number]>(COLORS[0])
-	const [inkSize, setInkSize] = useState<typeof SIZES[number]>(SIZES[1])
-	const [eraserSize, setEraserSize] = useState<typeof SIZES[number]>(SIZES[2])
-	const [highighterSize, setHighlighterSize] = useState<typeof SIZES[number]>(
-		SIZES[2]
-	)
+	const { app, rContainer, tool, setTool, size, color, setSize, setColor } =
+		useTogether({ onMount, onStrokeUpdate })
 
 	useYjs(app)
 
@@ -39,10 +32,7 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 							key={value}
 							title={value}
 							data-active={tool === value}
-							onPointerDown={() => {
-								setTool(value)
-								app.setTool(value)
-							}}
+							onPointerDown={() => setTool(value)}
 						>
 							<img src={`/tool-${value}.svg`} alt={value} />
 						</button>
@@ -50,7 +40,7 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 				</div>
 			</div>
 			<div className="panel panel-right">
-				{(tool === 'ink' || tool === 'highlighter') && (
+				{setColor && (
 					<>
 						<div className="colors">
 							{COLORS.map((value) => (
@@ -58,10 +48,7 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 									key={value}
 									title={value}
 									data-active={color === value}
-									onPointerDown={() => {
-										setColor(value)
-										app.setColor(value)
-									}}
+									onPointerDown={() => setColor(value)}
 									style={{ color: value }}
 								></button>
 							))}
@@ -74,35 +61,9 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 						<button
 							key={value}
 							title={value + ''}
-							data-active={
-								(tool === 'ink'
-									? inkSize
-									: tool === 'eraser'
-									? eraserSize
-									: tool === 'highlighter'
-									? highighterSize
-									: null) === value
-							}
+							data-active={size === value}
 							data-size={value}
-							onPointerDown={() => {
-								switch (tool) {
-									case 'ink': {
-										setInkSize(value)
-										app.setInkSize(value)
-										break
-									}
-									case 'eraser': {
-										setEraserSize(value)
-										app.setEraserSize(value)
-										break
-									}
-									case 'highlighter': {
-										setHighlighterSize(value)
-										app.setHighlighterSize(value)
-										break
-									}
-								}
-							}}
+							onPointerDown={() => setSize(value)}
 						></button>
 					))}
 				</div>

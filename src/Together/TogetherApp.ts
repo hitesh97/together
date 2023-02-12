@@ -102,11 +102,12 @@ export class TogetherApp extends EventEmitter {
 	private pointingId = -1
 
 	// Styles
-	private color: typeof COLORS[number] = COLORS[0]
 	private tool: typeof TOOLS[number] = TOOLS[0]
+	private inkColor: typeof COLORS[number] = COLORS[0]
 	private inkSize: typeof SIZES[number] = SIZES[1]
-	private eraserSize: typeof SIZES[number] = SIZES[2]
+	private highlighterColor: typeof COLORS[number] = COLORS[5]
 	private highlighterSize: typeof SIZES[number] = SIZES[2]
+	private eraserSize: typeof SIZES[number] = SIZES[2]
 
 	constructor() {
 		super()
@@ -127,8 +128,12 @@ export class TogetherApp extends EventEmitter {
 		this.onResize()
 	}
 
-	setColor = (color: typeof COLORS[number]) => {
-		this.color = color
+	setInkColor = (color: typeof COLORS[number]) => {
+		this.inkColor = color
+	}
+
+	setHighlighterColor = (color: typeof COLORS[number]) => {
+		this.highlighterColor = color
 	}
 
 	setTool = (tool: typeof TOOLS[number]) => {
@@ -293,7 +298,12 @@ export class TogetherApp extends EventEmitter {
 						: this.tool === 'highlighter'
 						? this.highlighterSize
 						: 10,
-				color: this.color,
+				color:
+					this.tool === 'ink'
+						? this.inkColor
+						: this.tool === 'highlighter'
+						? this.highlighterColor
+						: 'black',
 				points: [
 					[
 						pointer.x,
