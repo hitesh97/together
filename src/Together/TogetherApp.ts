@@ -514,6 +514,11 @@ export class TogetherApp extends EventEmitter {
       const stroke = this.strokes.get(this.currentStrokeId)
       if (!stroke) return
 
+      // Only regenerate eraser frames while drawing with ink
+      if (this.tool === 'ink' && this.eraserFrames < 400) {
+        this.eraserFrames++
+      }
+
       // Add the current point to the current stroke (even if we're between frames)
       const { pointer } = this
       stroke.points.push([pointer.x, pointer.y + offset, pointer.p])
@@ -538,8 +543,6 @@ export class TogetherApp extends EventEmitter {
           }
         }
       }
-    } else if ((this, this.eraserFrames < 400)) {
-      this.eraserFrames++
     }
 
     if (is60fpsFrame) {
