@@ -122,7 +122,7 @@ export function useYjs(app: TogetherApp) {
       }
 
       // If you haven't interacted with the page in 30 seconds, disconnect
-      timeout = setTimeout(handleDisconnect, 10 * 1000)
+      timeout = setTimeout(handleDisconnect, 60 * 1000)
     }
 
     app.on('updated-stroke', resetIdleTimeout)
