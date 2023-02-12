@@ -82,18 +82,6 @@ export class TogetherApp extends EventEmitter {
 
   readonly id = nanoid()
 
-  private userCursor: UserCursor = {
-    id: this.id,
-    color: COLORS[Math.floor(COLORS.length * Math.random())],
-    name: 'Anonymous',
-    icon: 'dot',
-    x: 0,
-    y: 0,
-    lastChanged: Date.now(),
-  }
-
-  private userCursors = new Map<string, UserCursor>()
-
   /**
    * The current state of the app.
    *
@@ -189,7 +177,6 @@ export class TogetherApp extends EventEmitter {
    */
   stop = () => {
     cancelAnimationFrame(this.raf)
-    this.emit('delted-user-cursor', this.userCursor.id)
   }
 
   /**
@@ -220,19 +207,6 @@ export class TogetherApp extends EventEmitter {
       this.emit('updated-stroke', stroke)
     }
   }
-
-  putUserCursor = (userCursor: UserCursor, external = true) => {
-    this.userCursors.set(userCursor.id, userCursor)
-
-    if (!external) {
-      this.emit('updated-user-cursor', userCursor)
-    }
-  }
-
-  deleteUserCursor = (id: string) => {
-    this.userCursors.delete(id)
-  }
-
   /**
    * Handle a resize event.
    *
@@ -315,14 +289,6 @@ export class TogetherApp extends EventEmitter {
         // Only set pen mode from off to on
         this.isPenMode = true
       }
-    }
-
-    if (!this.isPenMode || isPen) {
-      this.userCursor.x = pointer.x
-      this.userCursor.y = pointer.y
-      this.userCursor.lastChanged = this.now
-
-      this.putUserCursor(this.userCursor, false)
     }
   }
 
@@ -640,22 +606,5 @@ export class TogetherApp extends EventEmitter {
           this.paintStrokeToCanvas({ ctx, stroke })
         }
       })
-
-    const offset = this.getYOffsetFromTime(this.now)
-
-    ctx.strokeStyle = 'white'
-    ctx.lineWidth = 2
-
-    this.userCursors.forEach((userCursor) => {
-      if (userCursor.id === this.userCursor.id) return
-
-      const { x, y, color } = userCursor
-      ctx.beginPath()
-      ctx.globalCompositeOperation = 'source-over'
-      ctx.arc(x, y + offset, 8, 0, PI2)
-      ctx.fillStyle = color
-      ctx.fill()
-      ctx.stroke()
-    })
   }
 }

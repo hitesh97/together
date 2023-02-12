@@ -27,7 +27,7 @@ export const awareness = provider.awareness
 
 // Get a shared array of our line maps
 export const yStrokes: Y.Map<Y.Map<any>> = doc.getMap(`strokes-${VERSION}`)
-export const yUserCursors: Y.Map<Y.Map<any>> = doc.getMap(`cursors-${VERSION}`)
+export const yUsers: Y.Array<string> = doc.getArray(`users-${VERSION}`)
 
 // Create an undo manager for the line maps
 // export const undoManager = new Y.UndoManager(yStrokes)
