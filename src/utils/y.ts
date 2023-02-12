@@ -6,8 +6,7 @@ import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
 
 // if the process is in development, use "DEVELOPMENT_${version}"
-const VERSION =
-	(process.env.NODE_ENV === 'development' ? 'DEVELOPMENT_' : '') + 4
+const VERSION = (process.env.NODE_ENV === 'development' ? 'd' : '') + 5
 
 // Create the doc
 export const doc = new Y.Doc()
@@ -15,6 +14,8 @@ export const doc = new Y.Doc()
 // Create a websocket provider (but don't connect just yet)
 export const provider = new WebsocketProvider(
 	'wss://demos.yjs.dev',
+	// 'wss://together-yjs.herokuapp.com/',
+	// 'ws://localhost:1234/',
 	`together-${VERSION}`,
 	doc,
 	{
