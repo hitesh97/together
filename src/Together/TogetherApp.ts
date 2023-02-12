@@ -1,6 +1,6 @@
 import getStroke from 'perfect-freehand'
 import { BBox, Stroke } from './types'
-import { COLORS, DPR, SIZES, TOOLS } from './constants'
+import { COLORS, DPR, EASE_OUT_SINE, SIZES, TOOLS } from './constants'
 import { nanoid } from 'nanoid'
 import { EventEmitter } from 'eventemitter3'
 
@@ -222,12 +222,22 @@ export class TogetherApp extends EventEmitter {
 	onPointerDown: React.PointerEventHandler = (e) => {
 		if (this.state === 'pointing') return
 
+		const isPen = this.isPenEvent(e)
+
+		if (isPen) {
+			// Only set pen mode from off to on
+			this.isPenMode = true
+		} else {
+			// If we're in pen mode, ignore non-pen events
+			if (this.isPenMode) {
+				return
+			}
+		}
+
 		const { pointer } = this
 		pointer.x = e.clientX * DPR
 		pointer.y = e.clientY * DPR
-		pointer.p = e.pressure ?? 0.5
-
-		this.isPenMode = this.isPenEvent(e)
+		pointer.p = this.isPenMode ? e.pressure : 0.5
 
 		this.pointingId = e.pointerId
 
@@ -246,6 +256,26 @@ export class TogetherApp extends EventEmitter {
 		pointer.x = e.clientX * DPR
 		pointer.y = e.clientY * DPR
 		pointer.p = e.pressure ?? 0.5
+
+		if (this.state === 'pointing' && !this.isPenMode) {
+			const isPen = this.isPenEvent(e)
+
+			if (isPen) {
+				// If we switched from a non-pen to a pen, then
+				// clear the current stroke's points and start over.
+				const { currentStrokeId, strokes } = this
+				if (currentStrokeId) {
+					const stroke = strokes.get(currentStrokeId)
+					if (stroke) {
+						const { pointer } = this
+						stroke.points = [[pointer.x, pointer.y, pointer.p]]
+					}
+				}
+
+				// Only set pen mode from off to on
+				this.isPenMode = true
+			}
+		}
 	}
 
 	/**
@@ -358,8 +388,21 @@ export class TogetherApp extends EventEmitter {
 		const outline = getStroke(points, {
 			size: (isFatBrush ? size * 2 : size) * DPR,
 			last: done,
-			thinning: isFatBrush ? -0.65 : 0.65,
-			simulatePressure: !pen,
+			// easing: EASE_OUT_SINE,
+			...(pen
+				? {
+						easing: EASE_OUT_SINE,
+						thinning: isFatBrush ? -0.65 : 0.65,
+						streamline: 0.32,
+						smoothing: 0.65,
+						simulatePressure: false,
+				  }
+				: {
+						thinning: isFatBrush ? -0.65 : 0.65,
+						streamline: 0.5,
+						smoothing: 0.62,
+						simulatePressure: true,
+				  }),
 		})
 
 		ctx.beginPath()

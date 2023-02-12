@@ -19,3 +19,7 @@ export const COLORS = [
 	'#566c86',
 	'#333c57',
 ] as const
+
+const sin = Math.sin
+const PI = Math.PI
+export const EASE_OUT_SINE = (t: number) => sin((t * PI) / 2)
