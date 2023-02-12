@@ -14,7 +14,7 @@ export const doc = new Y.Doc()
 
 // Create a websocket provider (but don't connect just yet)
 export const provider = new WebsocketProvider(
-	'wss://https://yjswebsocket-lzdg--1234.local-credentialless.webcontainer.io',
+	'wss://demos.yjs.dev',
 	`together-${VERSION}`,
 	doc,
 	{
