@@ -4,9 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite\" \"partykit dev src/party.ts\" --kill-others",
     "build": "tsc && vite build",
     "preview": "vite preview"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "printWidth": 120,
+    "semi": false
   },
   "dependencies": {
     "@types/eventemitter3": "^2.0.2",
@@ -15,6 +20,7 @@
     "perfect-freehand": "^1.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "y-partykit": "^0.0.0-5edde06",
     "y-websocket": "^1.4.5",
     "yjs": "^13.5.45"
   },
@@ -23,6 +29,8 @@
     "@types/react": "^18.0.27",
     "@types/react-dom": "^18.0.10",
     "@vitejs/plugin-react-swc": "^3.0.0",
+    "concurrently": "^7.6.0",
+    "partykit": "^0.0.0-5edde06",
     "typescript": "^4.9.3",
     "vite": "^4.1.0"
   }

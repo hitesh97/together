@@ -3,7 +3,7 @@ The main shared yjs data structures for the app (the doc, lines, and services).
 */
 
 import * as Y from 'yjs'
-import { WebsocketProvider } from 'y-websocket'
+import YProvider from 'y-partykit/provider'
 
 // if the process is in development, use "DEVELOPMENT_${version}"
 const VERSION = (process.env.NODE_ENV === 'development' ? 'd' : '') + 5
@@ -12,15 +12,14 @@ const VERSION = (process.env.NODE_ENV === 'development' ? 'd' : '') + 5
 export const doc = new Y.Doc()
 
 // Create a websocket provider (but don't connect just yet)
-export const provider = new WebsocketProvider(
-	'wss://demos.yjs.dev',
-	// 'wss://together-yjs.herokuapp.com/',
-	// 'ws://localhost:1234/',
-	`together-${VERSION}`,
-	doc,
-	{
-		connect: false,
-	}
+export const provider = new YProvider(
+  'tldraw-together.threepointone.partykit.dev',
+  // "localhost:1999",
+  `together-${VERSION}`,
+  doc,
+  {
+    connect: false,
+  }
 )
 
 // Export the provider's awareness API
