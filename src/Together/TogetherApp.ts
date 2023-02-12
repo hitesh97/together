@@ -270,7 +270,9 @@ export class TogetherApp extends EventEmitter {
 			size: (isEraser ? size * 2 : size) * DPR,
 			last: done,
 			thinning: isEraser ? -0.65 : 0.65,
-			simulatePressure: points[0][2] === 0.5 && points[1]?.[2] === 0.5,
+			simulatePressure:
+				(points[0][2] === 0.0 || points[0][2] === 0.5) &&
+				(points[1] ? points[1]?.[2] === 0.0 || points[1]?.[2] === 0.5 : true),
 		})
 
 		ctx.beginPath()
@@ -392,6 +394,6 @@ export class TogetherApp extends EventEmitter {
 	}
 
 	private getYOffsetFromTime(time: number): number {
-		return (time - this.startTime) / (80 / this.speed)
+		return (time - this.startTime) / (50 / this.speed)
 	}
 }
