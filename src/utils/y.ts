@@ -1,12 +1,9 @@
-/*
-The main shared yjs data structures for the app (the doc, lines, and services).
-*/
-
 import * as Y from 'yjs'
 import YProvider from 'y-partykit/provider'
 
 // if the process is in development, use "DEVELOPMENT_${version}"
 const VERSION = (process.env.NODE_ENV === 'development' ? 'd' : '') + 5
+const RANDOM_ROOM = Math.floor(Math.random() * 2)
 
 // Create the doc
 export const doc = new Y.Doc()
@@ -15,7 +12,7 @@ export const doc = new Y.Doc()
 export const provider = new YProvider(
   'tldraw-together.threepointone.partykit.dev',
   // "localhost:1999",
-  `together-${VERSION}`,
+  `together-${VERSION}-${RANDOM_ROOM}`,
   doc,
   {
     connect: false,
@@ -28,6 +25,3 @@ export const awareness = provider.awareness
 // Get a shared array of our line maps
 export const yStrokes: Y.Map<Y.Map<any>> = doc.getMap(`strokes-${VERSION}`)
 export const yUsers: Y.Array<string> = doc.getArray(`users-${VERSION}`)
-
-// Create an undo manager for the line maps
-// export const undoManager = new Y.UndoManager(yStrokes)
