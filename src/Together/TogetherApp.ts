@@ -1,6 +1,6 @@
 import getStroke from 'perfect-freehand'
-import { BBox, Stroke } from './types'
-import { COLORS, DPR, EASE_OUT_SINE, SIZES, TOOLS } from './constants'
+import { BBox, Stroke, UserCursor } from './types'
+import { COLORS, DPR, PEN_EASING, PI2, SIZES, TOOLS } from './constants'
 import { nanoid } from 'nanoid'
 import { EventEmitter } from 'eventemitter3'
 
@@ -72,6 +72,20 @@ export class TogetherApp extends EventEmitter {
 	 * @private
 	 */
 	private strokes = new Map<string, Stroke>()
+
+	readonly id = nanoid()
+
+	private userCursor: UserCursor = {
+		id: this.id,
+		color: COLORS[Math.floor(COLORS.length * Math.random())],
+		name: 'Anonymous',
+		icon: 'dot',
+		x: 0,
+		y: 0,
+		lastChanged: Date.now(),
+	}
+
+	private userCursors = new Map<string, UserCursor>()
 
 	/**
 	 * The current state of the app.
@@ -168,6 +182,7 @@ export class TogetherApp extends EventEmitter {
 	 */
 	stop = () => {
 		cancelAnimationFrame(this.raf)
+		this.emit('delted-user-cursor', this.userCursor.id)
 	}
 
 	/**
@@ -199,6 +214,18 @@ export class TogetherApp extends EventEmitter {
 		}
 	}
 
+	putUserCursor = (userCursor: UserCursor, external = true) => {
+		this.userCursors.set(userCursor.id, userCursor)
+
+		if (!external) {
+			this.emit('updated-user-cursor', userCursor)
+		}
+	}
+
+	deleteUserCursor = (id: string) => {
+		this.userCursors.delete(id)
+	}
+
 	/**
 	 * Handle a resize event.
 	 *
@@ -211,6 +238,7 @@ export class TogetherApp extends EventEmitter {
 		this.canvas.width = rect.width * DPR
 		this.canvas.height = rect.height * DPR
 		this.canvas.style.transform = `scale(${1 / DPR}, ${1 / DPR})`
+
 		// we'll render on the next frame
 	}
 
@@ -237,7 +265,7 @@ export class TogetherApp extends EventEmitter {
 		const { pointer } = this
 		pointer.x = e.clientX * DPR
 		pointer.y = e.clientY * DPR
-		pointer.p = this.isPenMode ? e.pressure : 0.5
+		pointer.p = this.isPenMode ? Math.max(0.1, e.pressure) : 0.25
 
 		this.pointingId = e.pointerId
 
@@ -257,9 +285,9 @@ export class TogetherApp extends EventEmitter {
 		pointer.y = e.clientY * DPR
 		pointer.p = e.pressure ?? 0.5
 
-		if (this.state === 'pointing' && !this.isPenMode) {
-			const isPen = this.isPenEvent(e)
+		const isPen = this.isPenEvent(e)
 
+		if (this.state === 'pointing' && !this.isPenMode) {
 			if (isPen) {
 				// If we switched from a non-pen to a pen, then
 				// clear the current stroke's points and start over.
@@ -275,6 +303,14 @@ export class TogetherApp extends EventEmitter {
 				// Only set pen mode from off to on
 				this.isPenMode = true
 			}
+		}
+
+		if (!this.isPenMode || isPen) {
+			this.userCursor.x = pointer.x
+			this.userCursor.y = pointer.y
+			this.userCursor.lastChanged = this.now
+
+			this.putUserCursor(this.userCursor, false)
 		}
 	}
 
@@ -388,10 +424,9 @@ export class TogetherApp extends EventEmitter {
 		const outline = getStroke(points, {
 			size: (isFatBrush ? size * 2 : size) * DPR,
 			last: done,
-			// easing: EASE_OUT_SINE,
+			easing: PEN_EASING,
 			...(pen
 				? {
-						easing: EASE_OUT_SINE,
 						thinning: isFatBrush ? -0.65 : 0.65,
 						streamline: 0.32,
 						smoothing: 0.65,
@@ -600,5 +635,22 @@ export class TogetherApp extends EventEmitter {
 					this.paintStrokeToCanvas({ ctx, stroke })
 				}
 			})
+
+		const offset = this.getYOffsetFromTime(this.now)
+
+		ctx.strokeStyle = 'white'
+		ctx.lineWidth = 2
+
+		this.userCursors.forEach((userCursor) => {
+			if (userCursor.id === this.userCursor.id) return
+
+			const { x, y, color } = userCursor
+			ctx.beginPath()
+			ctx.globalCompositeOperation = 'source-over'
+			ctx.arc(x, y + offset, 8, 0, PI2)
+			ctx.fillStyle = color
+			ctx.fill()
+			ctx.stroke()
+		})
 	}
 }

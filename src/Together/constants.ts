@@ -20,6 +20,7 @@ export const COLORS = [
 	'#333c57',
 ] as const
 
-const sin = Math.sin
-const PI = Math.PI
-export const EASE_OUT_SINE = (t: number) => sin((t * PI) / 2)
+export const sin = Math.sin
+export const PI = Math.PI
+export const PI2 = PI * 2
+export const PEN_EASING = (t: number) => t * 0.65 + sin((t * PI) / 2) * 0.35

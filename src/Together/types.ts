@@ -13,3 +13,13 @@ export type Stroke = {
 	bbox: BBox
 	pen: boolean
 }
+
+export type UserCursor = {
+	id: string
+	name: string
+	color: string
+	icon: string
+	x: number
+	y: number
+	lastChanged: number
+}
