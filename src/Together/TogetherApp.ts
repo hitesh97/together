@@ -14,12 +14,11 @@ export class TogetherApp extends EventEmitter {
 	private canvas = document.createElement('canvas')
 	private now: number
 	private raf: any
-	private speed = 2
+	private speed = 0.618
 	private startTime = date.getTime()
 
 	private currentStrokeId: string | null = null
 	private strokes = new Map<string, Stroke>()
-	private bakedStrokes = new Map<string, Stroke>()
 	private state = 'idle' as 'idle' | 'pointing'
 	private pointer = { x: 0, y: 0, p: 0.5 }
 	private pointingId = -1
@@ -33,58 +32,6 @@ export class TogetherApp extends EventEmitter {
 		super()
 		this.now = Date.now()
 		this.canvas.className = 'canvas'
-	}
-
-	private tick = () => {
-		const now = Date.now()
-		const elapsed = now - this.now
-
-		const doPut = elapsed > 16
-
-		const offset = this.getYOffsetFromTime(this.now)
-
-		if (this.state === 'pointing' && this.currentStrokeId) {
-			const stroke = this.strokes.get(this.currentStrokeId)
-			if (!stroke) return
-
-			const { pointer } = this
-
-			stroke.points.push([pointer.x, pointer.y + offset, pointer.p])
-
-			if (doPut) {
-				this.putStroke(stroke, false)
-			}
-
-			// When we see a looooong stroke, stop and start a new one
-			if (stroke.points.length > 1000) {
-				this.completeStroke()
-				this.beginStroke()
-			}
-		}
-
-		if (doPut) {
-			// Cull shapes that are offscreen
-			this.bakedStrokes.forEach((bakedStroke) => {
-				if (bakedStroke.bbox.maxY - offset < 0) {
-					this.emit('deleted-stroke', bakedStroke.id)
-
-					// For Safari
-					const canvas = canvases.get(bakedStroke)
-					if (canvas) {
-						canvas.width = 0
-						canvas.height = 0
-					}
-
-					this.bakedStrokes.delete(bakedStroke.id)
-				}
-			})
-
-			this.now = now
-		}
-
-		this.paintCanvas()
-
-		requestAnimationFrame(this.tick)
 	}
 
 	/**
@@ -119,7 +66,12 @@ export class TogetherApp extends EventEmitter {
 	}
 
 	/**
-	 * Put a stroke (externally) into the canvas.
+	 * Put a stroke into the canvas.
+	 *
+	 * @param stroke The stroke to put.
+	 * @param external Whether the stroke is external or not. If it's external, it will not emit an event.
+	 *
+	 * @public
 	 */
 	putStroke = (stroke: Stroke, external = true) => {
 		if (stroke.done) {
@@ -129,9 +81,8 @@ export class TogetherApp extends EventEmitter {
 			}
 
 			// Only add the bake stroke if it's on screen
-			const bbox = this.getBoundingBoxFromStroke(stroke)
-			if (bbox.maxY - this.getYOffsetFromTime(this.now) > 0) {
-				this.bakedStrokes.set(stroke.id, stroke)
+			if (stroke.bbox.maxY - this.getYOffsetFromTime(this.now) > 0) {
+				this.strokes.set(stroke.id, stroke)
 			}
 		} else {
 			// Or else add it to the rendering strokes
@@ -155,7 +106,7 @@ export class TogetherApp extends EventEmitter {
 		this.canvas.width = rect.width * DPR
 		this.canvas.height = rect.height * DPR
 		this.canvas.style.transform = `scale(${1 / DPR}, ${1 / DPR})`
-		this.paintCanvas()
+		// we'll render on the next frame
 	}
 
 	/**
@@ -184,8 +135,6 @@ export class TogetherApp extends EventEmitter {
 	 * @public
 	 */
 	onPointerMove: React.PointerEventHandler = (e) => {
-		// if (this.state === 'pointing' && e.pointerId !== this.pointingId) return
-
 		const { pointer } = this
 		pointer.x = e.clientX * DPR
 		pointer.y = e.clientY * DPR
@@ -198,8 +147,6 @@ export class TogetherApp extends EventEmitter {
 	 * @public
 	 */
 	onPointerUp: React.PointerEventHandler = (e) => {
-		// if (this.state === 'pointing' && e.pointerId !== this.pointingId) return
-
 		const { pointer } = this
 		pointer.x = e.clientX * DPR
 		pointer.y = e.clientY * DPR
@@ -207,16 +154,28 @@ export class TogetherApp extends EventEmitter {
 
 		e.currentTarget.releasePointerCapture(e.pointerId)
 
-		this.completeStroke()
+		// If we have a current stroke, complete it.
+		const { currentStrokeId } = this
+		if (this.state === 'pointing' && currentStrokeId) {
+			const stroke = this.strokes.get(currentStrokeId)
+			if (!stroke) return
+			this.completeStroke(stroke)
+		}
+
+		this.state = 'idle'
+		this.currentStrokeId = null
 	}
 
+	/**
+	 * Begin a stroke.
+	 *
+	 * @private
+	 */
 	private beginStroke() {
 		const { pointer } = this
 
 		this.state = 'pointing'
-
 		this.currentStrokeId = nanoid()
-
 		const time = Date.now()
 
 		this.putStroke(
@@ -245,20 +204,15 @@ export class TogetherApp extends EventEmitter {
 		)
 	}
 
-	private completeStroke() {
-		const { currentStrokeId } = this
-
-		if (this.state === 'pointing' && currentStrokeId) {
-			// Complete the current stroke
-			const stroke = this.strokes.get(currentStrokeId)
-			if (!stroke) return
-			stroke.done = true
-			stroke.bbox = this.getBoundingBoxFromStroke(stroke)
-			this.putStroke(stroke, false)
-		}
-
-		this.state = 'idle'
-		this.currentStrokeId = null
+	/**
+	 * Complete a stroke (probably the current one).
+	 *
+	 * @private
+	 */
+	private completeStroke(stroke: Stroke) {
+		stroke.done = true
+		stroke.bbox = this.getBoundingBoxFromStroke(stroke)
+		this.putStroke(stroke, false)
 	}
 
 	/**
@@ -303,50 +257,6 @@ export class TogetherApp extends EventEmitter {
 		ctx.closePath()
 		ctx.fillStyle = color
 		ctx.fill()
-	}
-
-	/**
-	 * Paint the current frame. This is called on every animation frame.
-	 * It paints the baked strokes and renders current stroke.
-	 *
-	 * @private
-	 */
-	private paintCanvas(): void {
-		const cvs = this.canvas
-		const ctx = cvs.getContext('2d')
-
-		if (!ctx) return
-
-		const { bakedStrokes, strokes } = this
-
-		ctx.resetTransform()
-		ctx.clearRect(0, 0, cvs.width, cvs.height)
-		ctx.translate(0, -this.getYOffsetFromTime(Date.now()))
-
-		// First paint the baked strokes
-		const strokesToStamp = Array.from(bakedStrokes.values()).sort(
-			(a, b) => a.createdAt - b.createdAt
-		)
-
-		strokesToStamp.forEach((bakedStroke) => {
-			ctx.globalCompositeOperation =
-				bakedStroke.tool === 'eraser' ? 'destination-out' : 'source-over'
-			const canvas = this.getCanvasForStroke(bakedStroke)
-			if (canvas) {
-				ctx.drawImage(canvas, bakedStroke.bbox.minX, bakedStroke.bbox.minY)
-			}
-		})
-
-		// Now paint the rendering strokes
-		const strokesToRender = Array.from(strokes.values()).sort(
-			(a, b) => a.createdAt - b.createdAt
-		)
-
-		strokesToRender.forEach((stroke) => {
-			ctx.globalCompositeOperation =
-				stroke.tool === 'eraser' ? 'destination-out' : 'source-over'
-			this.paintStrokeToCanvas({ ctx, stroke })
-		})
 	}
 
 	private getCanvasForStroke(stroke: Stroke) {
@@ -409,6 +319,107 @@ export class TogetherApp extends EventEmitter {
 	}
 
 	private getYOffsetFromTime(time: number): number {
-		return (time - this.startTime) / (50 / this.speed)
+		return (time - this.startTime) / (16 / this.speed)
+	}
+
+	/**
+	 * The main loop, called every frame.
+	 *
+	 * @private
+	 */
+	private tick = () => {
+		const now = Date.now()
+		const elapsed = now - this.now
+
+		// Is this a 60fps frame?
+		const is60fpsFrame = elapsed > 16
+
+		// Calculate the offset from the current time
+		const offset = this.getYOffsetFromTime(now)
+
+		if (this.state === 'pointing' && this.currentStrokeId) {
+			const stroke = this.strokes.get(this.currentStrokeId)
+			if (!stroke) return
+
+			// Add the current point to the current stroke (even if we're between frames)
+			const { pointer } = this
+			stroke.points.push([pointer.x, pointer.y + offset, pointer.p])
+
+			// only update the shape if it's a 60fps frame
+			if (is60fpsFrame) {
+				this.putStroke(stroke, false)
+
+				// When we see a looooong stroke, stop and start a new one
+				if (stroke.points.length > 1000) {
+					this.completeStroke(stroke)
+					this.beginStroke()
+				}
+			}
+		}
+
+		if (is60fpsFrame) {
+			// cull shapes that are offscreen
+			this.strokes.forEach((stroke) => {
+				// If the stroke is done and is off screen...
+				if (stroke.done && stroke.bbox.maxY - offset < 0) {
+					// Ffr Safari, shrink the canvas to free it up
+					const canvas = canvases.get(stroke)
+
+					if (canvas) {
+						canvas.width = 0
+						canvas.height = 0
+					}
+
+					// delete the stroke
+					this.strokes.delete(stroke.id)
+
+					// share the event
+					this.emit('deleted-stroke', stroke.id)
+				}
+			})
+
+			// update the current time
+			this.now = now
+		}
+
+		// paint the canvas on every frame (even >60fps frames)
+		this.render()
+
+		// and set the next frame
+		requestAnimationFrame(this.tick)
+	}
+
+	/**
+	 * Paint the current frame. This is called on every animation frame.
+	 * It paints the baked strokes and renders current stroke.
+	 *
+	 * @private
+	 */
+	private render(): void {
+		const cvs = this.canvas
+		const ctx = cvs.getContext('2d')
+
+		if (!ctx) return
+
+		const { strokes } = this
+
+		ctx.resetTransform()
+		ctx.clearRect(0, 0, cvs.width, cvs.height)
+		ctx.translate(0, -this.getYOffsetFromTime(Date.now()))
+
+		Array.from(strokes.values())
+			.sort((a, b) => a.createdAt - b.createdAt)
+			.forEach((stroke) => {
+				ctx.globalCompositeOperation =
+					stroke.tool === 'eraser' ? 'destination-out' : 'source-over'
+				if (stroke.done) {
+					const canvas = this.getCanvasForStroke(stroke)
+					if (canvas) {
+						ctx.drawImage(canvas, stroke.bbox.minX, stroke.bbox.minY)
+					}
+				} else {
+					this.paintStrokeToCanvas({ ctx, stroke })
+				}
+			})
 	}
 }
