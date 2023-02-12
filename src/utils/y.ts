@@ -12,7 +12,7 @@ export const doc = new Y.Doc()
 export const provider = new YProvider(
   'tldraw-together.threepointone.partykit.dev',
   // "localhost:1999",
-  `together-${VERSION}-${RANDOM_ROOM}`,
+  `together-${VERSION}${RANDOM_ROOM > 0 ? `-${RANDOM_ROOM}` : ''}`,
   doc,
   {
     connect: false,
