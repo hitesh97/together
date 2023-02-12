@@ -7,7 +7,7 @@ export function useTogether({
 	onStrokeUpdate,
 }: {
 	onMount?: (app: TogetherApp) => void
-	onStrokeUpdate?: (app: TogetherApp, stroke: Stroke) => void
+	onStrokeUpdate?: (stroke: Stroke) => void
 }) {
 	const rContainer = useRef<HTMLDivElement>(null)
 	const [app] = useState<TogetherApp>(() => new TogetherApp())
@@ -26,8 +26,8 @@ export function useTogether({
 		const unsubs = [() => window.removeEventListener('resize', app.onResize)]
 
 		if (onStrokeUpdate) {
-			app.on('stroke-update', onStrokeUpdate)
-			unsubs.push(() => app.off('stroke-update', onStrokeUpdate))
+			app.on('updated-stroke', onStrokeUpdate)
+			unsubs.push(() => app.off('updated-stroke', onStrokeUpdate))
 		}
 
 		return () => {

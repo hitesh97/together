@@ -14,7 +14,9 @@
     "nanoid": "^3.0.0",
     "perfect-freehand": "^1.2.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "y-websocket": "^1.4.5",
+    "yjs": "^13.5.45"
   },
   "devDependencies": {
     "@types/react": "^18.0.27",

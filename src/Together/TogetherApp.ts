@@ -4,6 +4,9 @@ import { DPR } from './constants'
 import { nanoid } from 'nanoid'
 import { EventEmitter } from 'eventemitter3'
 
+const date = new Date()
+date.setUTCHours(0, 0, 0, 0)
+
 export class TogetherApp extends EventEmitter {
 	private parent: HTMLElement | null = null
 	private canvas = document.createElement('canvas')
@@ -12,6 +15,7 @@ export class TogetherApp extends EventEmitter {
 	private elapsed = 0
 	private duration = 0
 	private speed = 2
+	private startTime = date.getTime()
 
 	private currentStrokeId: string | null = null
 	private strokes = new Map<string, Stroke>()
@@ -44,10 +48,13 @@ export class TogetherApp extends EventEmitter {
 		this.now = now
 
 		// Cull shapes that are offscreen
-		const { offset } = this
 
 		this.bakedStrokes.forEach((bakedStroke) => {
-			if (bakedStroke.bbox.maxY - offset < 0) {
+			if (
+				bakedStroke.bbox.maxY - this.getYOffsetFromTime(bakedStroke.createdAt) <
+				0
+			) {
+				this.emit('deleted-stroke', bakedStroke.id)
 				this.bakedStrokes.delete(bakedStroke.id)
 			}
 		})
@@ -57,7 +64,11 @@ export class TogetherApp extends EventEmitter {
 			if (!stroke) return
 
 			const { pointer } = this
-			stroke.points.push([pointer.x, pointer.y + offset, pointer.p])
+			stroke.points.push([
+				pointer.x,
+				pointer.y + this.getYOffsetFromTime(Date.now()),
+				pointer.p,
+			])
 			this.putStroke(stroke, false)
 		}
 
@@ -116,7 +127,7 @@ export class TogetherApp extends EventEmitter {
 		}
 
 		if (!external) {
-			this.emit('updated-stroke', { stroke })
+			this.emit('updated-stroke', stroke)
 		}
 	}
 
@@ -141,7 +152,7 @@ export class TogetherApp extends EventEmitter {
 	 * @public
 	 */
 	onPointerDown: React.PointerEventHandler = (e) => {
-		if (this.state === 'pointing' && e.pointerId !== this.pointingId) return
+		if (this.state === 'pointing') return
 
 		const { pointer } = this
 		pointer.x = e.clientX * DPR
@@ -154,15 +165,20 @@ export class TogetherApp extends EventEmitter {
 
 		this.state = 'pointing'
 
+		// Create a new current stroke
+
 		this.currentStrokeId = nanoid()
+		const time = Date.now()
 
 		this.putStroke({
 			id: this.currentStrokeId,
-			createdAt: Date.now(),
+			createdAt: time,
 			tool: this.tool,
 			size: this.size,
 			color: this.color,
-			points: [[pointer.x, pointer.y + this.offset, pointer.p]],
+			points: [
+				[pointer.x, pointer.y + this.getYOffsetFromTime(Date.now()), pointer.p],
+			],
 			done: false,
 		})
 	}
@@ -194,8 +210,12 @@ export class TogetherApp extends EventEmitter {
 		pointer.y = e.clientY * DPR
 		pointer.p = e.pressure ?? 0.5
 
+		e.currentTarget.releasePointerCapture(e.pointerId)
+
 		const { currentStrokeId } = this
+
 		if (this.state === 'pointing' && currentStrokeId) {
+			// Complete the current stroke
 			const stroke = this.strokes.get(currentStrokeId)
 			if (!stroke) return
 			stroke.done = true
@@ -204,15 +224,6 @@ export class TogetherApp extends EventEmitter {
 
 		this.state = 'idle'
 		this.currentStrokeId = null
-	}
-
-	/**
-	 * The current y offset.
-	 *
-	 * @public
-	 */
-	private get offset() {
-		return this.duration / (100 / this.speed)
 	}
 
 	/**
@@ -230,10 +241,11 @@ export class TogetherApp extends EventEmitter {
 	}) {
 		const {
 			ctx,
-			stroke: { points, size, color, done },
+			stroke: { tool, points, size, color, done },
 		} = opts
 
-		const isEraser = this.tool === 'eraser'
+		const isEraser = tool === 'eraser'
+
 		const stroke = getStroke(points, {
 			size: (isEraser ? size * 2 : size) * DPR,
 			last: done,
@@ -268,11 +280,11 @@ export class TogetherApp extends EventEmitter {
 
 		if (!ctx) return
 
-		const { offset, bakedStrokes, strokes, tool, size, color } = this
+		const { bakedStrokes, strokes } = this
 
 		ctx.resetTransform()
 		ctx.clearRect(0, 0, cvs.width, cvs.height)
-		ctx.translate(0, -offset)
+		ctx.translate(0, -this.getYOffsetFromTime(Date.now()))
 
 		// First paint the baked strokes
 		Array.from(bakedStrokes.values())
@@ -291,9 +303,8 @@ export class TogetherApp extends EventEmitter {
 		Array.from(strokes.values())
 			.sort((a, b) => a.createdAt - b.createdAt)
 			.forEach((stroke) => {
-				console.log('painting stroke')
 				ctx.globalCompositeOperation =
-					tool === 'eraser' ? 'destination-out' : 'source-over'
+					stroke.tool === 'eraser' ? 'destination-out' : 'source-over'
 				this.paintStrokeToCanvas({ ctx, stroke })
 			})
 	}
@@ -356,5 +367,9 @@ export class TogetherApp extends EventEmitter {
 		maxY += padding
 
 		return { minX, minY, maxX, maxY }
+	}
+
+	private getYOffsetFromTime(time: number): number {
+		return (time - this.startTime) / (80 / this.speed)
 	}
 }
