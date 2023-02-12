@@ -1,220 +1,256 @@
 html,
 * {
-	box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 button {
-	cursor: pointer;
-	border: none;
-	padding: 8px 16px;
-	font-weight: 500;
-	pointer-events: all;
-	color: #333;
-	background-color: transparent;
-	background: transparent;
+  cursor: pointer;
+  border: none;
+  padding: 8px 16px;
+  font-weight: 500;
+  pointer-events: all;
+  color: #333;
+  background-color: transparent;
+  background: transparent;
 }
 
 button > img {
-	height: 16px;
-	width: 16px;
+  height: 16px;
+  width: 16px;
 }
 
 .app {
-	position: fixed;
-	inset: 0px;
-	overflow: clip;
+  position: fixed;
+  inset: 0px;
+  overflow: clip;
 }
 
 .canvas-container {
-	position: absolute;
-	inset: 0px;
-	z-index: 100;
-	touch-action: none;
+  position: absolute;
+  inset: 0px;
+  z-index: 100;
+  touch-action: none;
 }
 
 .canvas {
-	position: absolute;
-	inset: 0px;
-	transform-origin: top left;
-	touch-action: none;
+  position: absolute;
+  inset: 0px;
+  transform-origin: top left;
+  touch-action: none;
 }
 
 /* -------------------------------------------------- */
 /* ------------------- Left Panel ------------------- */
 
 .panel-left {
-	position: absolute;
-	z-index: 250;
-	top: 0px;
-	left: 0px;
-	display: flex;
-	gap: 8px;
-	padding: 4px;
+  position: absolute;
+  z-index: 250;
+  top: 0px;
+  left: 0px;
+  display: flex;
+  gap: 8px;
+  padding: 4px;
 }
 
 .panel {
-	margin: 4px;
-	border-radius: 12px;
-	background-color: rgba(255, 255, 255, 0.9);
+  margin: 4px;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.9);
 }
 /* --------------------- Tools --------------------- */
 
 .tools {
-	display: flex;
-	gap: 4px;
+  display: flex;
+  gap: 4px;
 }
 
 .tools button {
-	padding: 0px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 4px 8px;
-	height: 32px;
+  padding: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  height: 32px;
 }
 
 .tools button::after {
-	content: '';
-	display: block;
-	height: 100%;
-	width: 100%;
-	border-radius: 6px;
+  content: '';
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: 6px;
 }
 
 .tools button[data-active='true'] {
-	background-color: rgba(0, 0, 0, 0.15);
-	border-radius: 9px;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 9px;
 }
 
 .tools button[data-active='false']:hover {
-	background-color: rgba(0, 0, 0, 0.1);
-	border-radius: 9px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 9px;
 }
 
 /* -------------------------------------------------- */
 /* ------------------- Right Panel ------------------ */
 
 .panel-right {
-	position: absolute;
-	z-index: 200;
-	top: 0px;
-	right: 0px;
-	display: flex;
-	padding: 4px;
+  position: absolute;
+  z-index: 200;
+  top: 0px;
+  right: 0px;
+  display: flex;
+  padding: 4px;
 }
 
 /* --------------------- Colors --------------------- */
 
 .colors {
-	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .colors button {
-	height: 32px;
-	width: 32px;
-	padding: 0px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 4px;
+  height: 32px;
+  width: 32px;
+  padding: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
 }
 
 .colors button::after {
-	content: '';
-	display: block;
-	height: 100%;
-	width: 100%;
-	border-radius: 6px;
-	background-color: currentColor;
+  content: '';
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: 6px;
+  background-color: currentColor;
 }
 
 .colors button[data-active='true'] {
-	background-color: rgba(0, 0, 0, 0.15);
-	border-radius: 9px;
-	padding: 4px;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 9px;
+  padding: 4px;
 }
 
 .colors button[data-active='false']:hover {
-	background-color: rgba(0, 0, 0, 0.1);
-	border-radius: 9px;
-	padding: 4px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 9px;
+  padding: 4px;
 }
 
 /* ---------------------- Sizes --------------------- */
 
 .sizes {
-	display: grid;
-	grid-template-columns: repeat(1, 1fr);
-	border-radius: 4px;
-	overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .sizes button {
-	height: 32px;
-	width: 32px;
-	padding: 0px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 4px;
+  height: 32px;
+  width: 32px;
+  padding: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
 }
 
 .sizes button::after {
-	content: '';
-	display: block;
-	height: 100%;
-	width: 100%;
-	border-radius: 100%;
-	background-color: #333;
+  content: '';
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: 100%;
+  background-color: #333;
 }
 
 .sizes button[data-active='true'] {
-	background-color: rgba(0, 0, 0, 0.2);
-	border-radius: 9px;
-	padding: 4px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 9px;
+  padding: 4px;
 }
 
 .sizes button[data-active='false']:hover {
-	background-color: rgba(0, 0, 0, 0.1);
-	border-radius: 9px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 9px;
 }
 
 .sizes button[data-size='5']::after {
-	scale: 0.4;
+  scale: 0.4;
 }
 
 .sizes button[data-size='10']::after {
-	scale: 0.6;
+  scale: 0.6;
 }
 
 .sizes button[data-size='20']::after {
-	scale: 0.8;
+  scale: 0.8;
 }
 
 .sizes button[data-size='40']::after {
-	scale: 1;
+  scale: 1;
 }
 
 /* --------------------- Divider -------------------- */
 
 .vertical-divider {
-	width: 1px;
-	background-color: rgba(0, 0, 0, 0.1);
-	margin: 0px 8px;
+  width: 1px;
+  background-color: rgba(0, 0, 0, 0.1);
+  margin: 0px 8px;
 }
 
-.by-tldraw {
-	position: absolute;
-	bottom: 16px;
-	right: 16px;
-	height: 32px;
-	cursor: pointer;
-	z-index: 500;
-	pointer-events: all;
+.lower-left {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  cursor: pointer;
+  z-index: 500;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.lower-right {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  cursor: pointer;
+  z-index: 500;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
-.by-tldraw img {
-	height: 100%;
-	pointer-events: none;
+.lower-right a,
+.lower-left a {
+  height: fit-content;
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  font: 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  text-decoration: none;
+  font-weight: 500;
+  color: #333;
+  gap: 4px;
+}
+
+.tldraw {
+  height: 34px;
+  pointer-events: none;
+  margin-right: -2px;
+}
+
+.partykit {
+  height: 19px;
+  pointer-events: none;
 }

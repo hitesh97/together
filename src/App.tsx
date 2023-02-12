@@ -14,11 +14,11 @@ import { Together } from './Together'
  */
 
 export function App() {
-	return (
-		<div className="app">
-			<Together />
-		</div>
-	)
+  return (
+    <div className="app">
+      <Together />
+    </div>
+  )
 }
 
 export default App
