@@ -22,6 +22,7 @@ export class TogetherApp extends EventEmitter {
 	private state = 'idle' as 'idle' | 'pointing'
 	private pointer = { x: 0, y: 0, p: 0.5 }
 	private pointingId = -1
+	private isPenMode = false
 
 	// Styles
 	color: typeof COLORS[number] = COLORS[0]
@@ -122,6 +123,8 @@ export class TogetherApp extends EventEmitter {
 		pointer.y = e.clientY * DPR
 		pointer.p = e.pressure ?? 0.5
 
+		this.isPenMode = this.isPenEvent(e)
+
 		this.pointingId = e.pointerId
 
 		e.currentTarget.setPointerCapture(e.pointerId)
@@ -199,6 +202,7 @@ export class TogetherApp extends EventEmitter {
 					maxX: pointer.x + 1,
 					maxY: pointer.y + 1000,
 				},
+				pen: this.isPenMode,
 			},
 			false
 		)
@@ -230,28 +234,26 @@ export class TogetherApp extends EventEmitter {
 	}) {
 		const {
 			ctx,
-			stroke: { tool, points, size, color, done },
+			stroke: { tool, points, size, color, done, pen },
 		} = opts
 
 		const isEraser = tool === 'eraser'
 
-		const stroke = getStroke(points, {
+		const outline = getStroke(points, {
 			size: (isEraser ? size * 2 : size) * DPR,
 			last: done,
 			thinning: isEraser ? -0.65 : 0.65,
-			simulatePressure:
-				(points[0][2] === 0.0 || points[0][2] === 0.5) &&
-				(points[1] ? points[1]?.[2] === 0.0 || points[1]?.[2] === 0.5 : true),
+			simulatePressure: !pen,
 		})
 
 		ctx.beginPath()
-		ctx.moveTo(stroke[0][0], stroke[0][1])
-		for (let i = 1; i < stroke.length - 1; i++) {
+		ctx.moveTo(outline[0][0], outline[0][1])
+		for (let i = 1, n = outline.length - 1; i < n; i++) {
 			ctx.quadraticCurveTo(
-				stroke[i][0],
-				stroke[i][1],
-				(stroke[i][0] + stroke[i + 1][0]) / 2,
-				(stroke[i][1] + stroke[i + 1][1]) / 2
+				outline[i][0],
+				outline[i][1],
+				(outline[i][0] + outline[i + 1][0]) / 2,
+				(outline[i][1] + outline[i + 1][1]) / 2
 			)
 		}
 		ctx.closePath()
@@ -320,6 +322,20 @@ export class TogetherApp extends EventEmitter {
 
 	private getYOffsetFromTime(time: number): number {
 		return (time - this.startTime) / (16 / this.speed)
+	}
+
+	private isPenEvent(event: React.PointerEvent | PointerEvent): boolean {
+		return (
+			// if it's a pen, then it should support pressure
+			event.pointerType === 'pen' ||
+			!(
+				// otherwise, look at the event's pressure;
+				// wacoms etc will use 'mouse' but report pressure,
+				// for regular devices the spec for default pressure is .5
+				// but some report 0 (iphones) or 1 (?) instead.
+				(event.pressure === 0 || event.pressure === 1 || event.pressure === 0.5)
+			)
+		)
 	}
 
 	/**

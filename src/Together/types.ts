@@ -11,4 +11,5 @@ export type Stroke = {
 	points: Point[]
 	done: boolean
 	bbox: BBox
+	pen: boolean
 }
