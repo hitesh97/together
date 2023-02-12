@@ -41,43 +41,38 @@ export class TogetherApp extends EventEmitter {
 
 		const doPut = elapsed > 16
 
+		const offset = this.getYOffsetFromTime(this.now)
+
 		if (this.state === 'pointing' && this.currentStrokeId) {
 			const stroke = this.strokes.get(this.currentStrokeId)
 			if (!stroke) return
 
 			const { pointer } = this
-			stroke.points.push([
-				pointer.x,
-				pointer.y + this.getYOffsetFromTime(now),
-				pointer.p,
-			])
+
+			stroke.points.push([pointer.x, pointer.y + offset, pointer.p])
 
 			if (doPut) {
-				// Cull shapes that are offscreen
-				this.bakedStrokes.forEach((bakedStroke) => {
-					if (
-						bakedStroke.bbox.maxY -
-							this.getYOffsetFromTime(bakedStroke.createdAt) <
-						0
-					) {
-						this.emit('deleted-stroke', bakedStroke.id)
-
-						// For Safari
-						const canvas = canvases.get(bakedStroke)
-						if (canvas) {
-							canvas.width = 0
-							canvas.height = 0
-						}
-
-						this.bakedStrokes.delete(bakedStroke.id)
-					}
-				})
-
 				this.putStroke(stroke, false)
 			}
 		}
 
 		if (doPut) {
+			// Cull shapes that are offscreen
+			this.bakedStrokes.forEach((bakedStroke) => {
+				if (bakedStroke.bbox.maxY - offset < 0) {
+					this.emit('deleted-stroke', bakedStroke.id)
+
+					// For Safari
+					const canvas = canvases.get(bakedStroke)
+					if (canvas) {
+						canvas.width = 0
+						canvas.height = 0
+					}
+
+					this.bakedStrokes.delete(bakedStroke.id)
+				}
+			})
+
 			this.now = now
 		}
 
@@ -128,7 +123,8 @@ export class TogetherApp extends EventEmitter {
 			}
 
 			// Only add the bake stroke if it's on screen
-			if (stroke.bbox.maxY - this.getYOffsetFromTime(stroke.createdAt) > 0) {
+			const bbox = this.getBoundingBoxFromStroke(stroke)
+			if (bbox.maxY - this.getYOffsetFromTime(this.now) > 0) {
 				this.bakedStrokes.set(stroke.id, stroke)
 			}
 		} else {
@@ -183,7 +179,7 @@ export class TogetherApp extends EventEmitter {
 		this.putStroke(
 			{
 				id: this.currentStrokeId,
-				createdAt: time,
+				createdAt: time - this.startTime,
 				tool: this.tool,
 				size: this.size,
 				color: this.color,
