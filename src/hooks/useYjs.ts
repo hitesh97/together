@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { TogetherApp } from '../Together/TogetherApp'
-import { Stroke, UserCursor } from '../Together/types'
+import { Stroke } from '../Together/types'
 
 let ID: string
 
@@ -86,7 +86,7 @@ export function useYjs(app: TogetherApp) {
   // tab or window closes.
   useEffect(() => {
     function handleConnect() {
-      setIsSynced(true)
+      console.log('Connected')
       const index = yUsers.toArray().indexOf(ID)
       if (index === -1) {
         yUsers.push([ID])
@@ -97,9 +97,14 @@ export function useYjs(app: TogetherApp) {
       yStrokes.forEach((yStroke) => {
         app.putStroke(yStroke.toJSON() as Stroke, true)
       })
+
+      setIsSynced(true)
+      resetIdleTimeout()
     }
 
     function handleDisconnect() {
+      console.log('Disconnected')
+      clearTimeout(timeout)
       const index = yUsers.toArray().indexOf(ID)
       if (index > -1) {
         yUsers.delete(index, 1)
@@ -110,6 +115,18 @@ export function useYjs(app: TogetherApp) {
       setIsSynced(false)
     }
 
+    let timeout: any = -1
+    function resetIdleTimeout() {
+      if (timeout !== -1) {
+        clearTimeout(timeout)
+      }
+
+      // If you haven't interacted with the page in 30 seconds, disconnect
+      timeout = setTimeout(handleDisconnect, 10 * 1000)
+    }
+
+    app.on('updated-stroke', resetIdleTimeout)
+
     window.addEventListener('beforeunload', handleDisconnect)
 
     provider.on('sync', handleConnect)
@@ -119,6 +136,7 @@ export function useYjs(app: TogetherApp) {
 
     return () => {
       handleDisconnect()
+      app.off('updated-stroke', resetIdleTimeout)
       window.removeEventListener('beforeunload', handleDisconnect)
     }
   }, [])
