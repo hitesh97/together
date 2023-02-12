@@ -10,9 +10,5 @@ export type Stroke = {
 	color: string
 	points: Point[]
 	done: boolean
-}
-
-export type BakedStroke = Omit<Stroke, 'points'> & {
-	canvas: HTMLCanvasElement
 	bbox: BBox
 }

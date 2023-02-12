@@ -1,5 +1,5 @@
 import getStroke from 'perfect-freehand'
-import { BakedStroke, BBox, Point, Stroke } from './types'
+import { BBox, Stroke } from './types'
 import { DPR } from './constants'
 import { nanoid } from 'nanoid'
 import { EventEmitter } from 'eventemitter3'
@@ -7,19 +7,19 @@ import { EventEmitter } from 'eventemitter3'
 const date = new Date()
 date.setUTCHours(0, 0, 0, 0)
 
+const canvases = new WeakMap<Stroke, HTMLCanvasElement>()
+
 export class TogetherApp extends EventEmitter {
 	private parent: HTMLElement | null = null
 	private canvas = document.createElement('canvas')
 	private now: number
 	private raf: any
-	private elapsed = 0
-	private duration = 0
 	private speed = 2
 	private startTime = date.getTime()
 
 	private currentStrokeId: string | null = null
 	private strokes = new Map<string, Stroke>()
-	private bakedStrokes = new Map<string, BakedStroke>()
+	private bakedStrokes = new Map<string, Stroke>()
 	private state = 'idle' as 'idle' | 'pointing'
 	private pointer = { x: 0, y: 0, p: 0.5 }
 	private pointingId = -1
@@ -37,27 +37,9 @@ export class TogetherApp extends EventEmitter {
 
 	private tick = () => {
 		const now = Date.now()
-		this.elapsed = now - this.now
-		if (this.elapsed < 16) {
-			this.raf = requestAnimationFrame(this.tick)
-			return
-		}
+		const elapsed = now - this.now
 
-		this.duration += this.elapsed
-		this.elapsed = 0
-		this.now = now
-
-		// Cull shapes that are offscreen
-
-		this.bakedStrokes.forEach((bakedStroke) => {
-			if (
-				bakedStroke.bbox.maxY - this.getYOffsetFromTime(bakedStroke.createdAt) <
-				0
-			) {
-				this.emit('deleted-stroke', bakedStroke.id)
-				this.bakedStrokes.delete(bakedStroke.id)
-			}
-		})
+		const doPut = elapsed > 16
 
 		if (this.state === 'pointing' && this.currentStrokeId) {
 			const stroke = this.strokes.get(this.currentStrokeId)
@@ -66,10 +48,37 @@ export class TogetherApp extends EventEmitter {
 			const { pointer } = this
 			stroke.points.push([
 				pointer.x,
-				pointer.y + this.getYOffsetFromTime(Date.now()),
+				pointer.y + this.getYOffsetFromTime(now),
 				pointer.p,
 			])
-			this.putStroke(stroke, false)
+
+			if (doPut) {
+				// Cull shapes that are offscreen
+				this.bakedStrokes.forEach((bakedStroke) => {
+					if (
+						bakedStroke.bbox.maxY -
+							this.getYOffsetFromTime(bakedStroke.createdAt) <
+						0
+					) {
+						this.emit('deleted-stroke', bakedStroke.id)
+
+						// For Safari
+						const canvas = canvases.get(bakedStroke)
+						if (canvas) {
+							canvas.width = 0
+							canvas.height = 0
+						}
+
+						this.bakedStrokes.delete(bakedStroke.id)
+					}
+				})
+
+				this.putStroke(stroke, false)
+			}
+		}
+
+		if (doPut) {
+			this.now = now
 		}
 
 		this.paintCanvas()
@@ -118,16 +127,10 @@ export class TogetherApp extends EventEmitter {
 				this.strokes.delete(stroke.id)
 			}
 
-			// Create a baked storke
-			const bbox = this.getBoundingBoxFromStroke(stroke)
-
 			// Only add the bake stroke if it's on screen
-			if (bbox.maxY - this.getYOffsetFromTime(stroke.createdAt) > 0) {
-				const bakedStroke = this.getBakedStroke(stroke)
-				this.bakedStrokes.set(bakedStroke.id, bakedStroke)
+			if (stroke.bbox.maxY - this.getYOffsetFromTime(stroke.createdAt) > 0) {
+				this.bakedStrokes.set(stroke.id, stroke)
 			}
-
-			return
 		} else {
 			// Or else add it to the rendering strokes
 			this.strokes.set(stroke.id, stroke)
@@ -177,17 +180,30 @@ export class TogetherApp extends EventEmitter {
 		this.currentStrokeId = nanoid()
 		const time = Date.now()
 
-		this.putStroke({
-			id: this.currentStrokeId,
-			createdAt: time,
-			tool: this.tool,
-			size: this.size,
-			color: this.color,
-			points: [
-				[pointer.x, pointer.y + this.getYOffsetFromTime(Date.now()), pointer.p],
-			],
-			done: false,
-		})
+		this.putStroke(
+			{
+				id: this.currentStrokeId,
+				createdAt: time,
+				tool: this.tool,
+				size: this.size,
+				color: this.color,
+				points: [
+					[
+						pointer.x,
+						pointer.y + this.getYOffsetFromTime(Date.now()),
+						pointer.p,
+					],
+				],
+				done: false,
+				bbox: {
+					minX: pointer.x,
+					minY: pointer.y,
+					maxX: pointer.x + 1,
+					maxY: pointer.y + 1000,
+				},
+			},
+			false
+		)
 	}
 
 	/**
@@ -196,7 +212,7 @@ export class TogetherApp extends EventEmitter {
 	 * @public
 	 */
 	onPointerMove: React.PointerEventHandler = (e) => {
-		if (this.state === 'pointing' && e.pointerId !== this.pointingId) return
+		// if (this.state === 'pointing' && e.pointerId !== this.pointingId) return
 
 		const { pointer } = this
 		pointer.x = e.clientX * DPR
@@ -210,7 +226,7 @@ export class TogetherApp extends EventEmitter {
 	 * @public
 	 */
 	onPointerUp: React.PointerEventHandler = (e) => {
-		if (this.state === 'pointing' && e.pointerId !== this.pointingId) return
+		// if (this.state === 'pointing' && e.pointerId !== this.pointingId) return
 
 		const { pointer } = this
 		pointer.x = e.clientX * DPR
@@ -226,6 +242,7 @@ export class TogetherApp extends EventEmitter {
 			const stroke = this.strokes.get(currentStrokeId)
 			if (!stroke) return
 			stroke.done = true
+			stroke.bbox = this.getBoundingBoxFromStroke(stroke)
 			this.putStroke(stroke, false)
 		}
 
@@ -294,53 +311,56 @@ export class TogetherApp extends EventEmitter {
 		ctx.translate(0, -this.getYOffsetFromTime(Date.now()))
 
 		// First paint the baked strokes
-		Array.from(bakedStrokes.values())
-			.sort((a, b) => a.createdAt - b.createdAt)
-			.forEach((bakedStroke) => {
-				ctx.globalCompositeOperation =
-					bakedStroke.tool === 'eraser' ? 'destination-out' : 'source-over'
-				ctx.drawImage(
-					bakedStroke.canvas,
-					bakedStroke.bbox.minX,
-					bakedStroke.bbox.minY
-				)
-			})
+		const strokesToStamp = Array.from(bakedStrokes.values()).sort(
+			(a, b) => a.createdAt - b.createdAt
+		)
+
+		strokesToStamp.forEach((bakedStroke) => {
+			ctx.globalCompositeOperation =
+				bakedStroke.tool === 'eraser' ? 'destination-out' : 'source-over'
+			const canvas = this.getCanvasForStroke(bakedStroke)
+			if (canvas) {
+				ctx.drawImage(canvas, bakedStroke.bbox.minX, bakedStroke.bbox.minY)
+			}
+		})
 
 		// Now paint the rendering strokes
-		Array.from(strokes.values())
-			.sort((a, b) => a.createdAt - b.createdAt)
-			.forEach((stroke) => {
-				ctx.globalCompositeOperation =
-					stroke.tool === 'eraser' ? 'destination-out' : 'source-over'
-				this.paintStrokeToCanvas({ ctx, stroke })
-			})
+		const strokesToRender = Array.from(strokes.values()).sort(
+			(a, b) => a.createdAt - b.createdAt
+		)
+
+		strokesToRender.forEach((stroke) => {
+			ctx.globalCompositeOperation =
+				stroke.tool === 'eraser' ? 'destination-out' : 'source-over'
+			this.paintStrokeToCanvas({ ctx, stroke })
+		})
 	}
 
-	/**
-	 * Bake a stroke into an image.
-	 * This is called when a stroke is finished.
-	 *
-	 * @param stroke The stroke to bake.
-	 * @returns The baked stroke.
-	 * @private
-	 */
-	private getBakedStroke(stroke: Stroke): BakedStroke {
-		const bbox = this.getBoundingBoxFromStroke(stroke)
+	private getCanvasForStroke(stroke: Stroke) {
+		if (canvases.has(stroke)) {
+			return canvases.get(stroke)
+		}
+
+		const { bbox } = stroke
 
 		const cvs = document.createElement('canvas') as HTMLCanvasElement
 		cvs.width = bbox.maxX - bbox.minX
 		cvs.height = bbox.maxY - bbox.minY
 
-		const ctx = cvs.getContext('2d')!
+		const ctx = cvs.getContext('2d')
+
+		if (!ctx) {
+			console.error('Could not get context')
+			return null
+		}
+
 		ctx.translate(-bbox.minX, -bbox.minY)
 
 		this.paintStrokeToCanvas({ ctx, stroke })
 
-		return {
-			...stroke,
-			bbox,
-			canvas: cvs,
-		}
+		canvases.set(stroke, cvs)
+
+		return cvs
 	}
 
 	/**

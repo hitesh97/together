@@ -21,9 +21,21 @@ export function useTogether({
 
 		if (onMount) onMount(app)
 
-		window.addEventListener('resize', app.onResize)
+		const cancelEvent = (e: Event) => e.preventDefault()
 
-		const unsubs = [() => window.removeEventListener('resize', app.onResize)]
+		window.addEventListener('resize', app.onResize)
+		window.addEventListener('touchstart', cancelEvent)
+		window.addEventListener('touchend', cancelEvent)
+		window.addEventListener('touchmove', cancelEvent)
+
+		const unsubs = [
+			() => {
+				window.removeEventListener('resize', app.onResize)
+				window.removeEventListener('touchstart', cancelEvent)
+				window.removeEventListener('touchend', cancelEvent)
+				window.removeEventListener('touchmove', cancelEvent)
+			},
+		]
 
 		if (onStrokeUpdate) {
 			app.on('updated-stroke', onStrokeUpdate)

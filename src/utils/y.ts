@@ -4,9 +4,8 @@ The main shared yjs data structures for the app (the doc, lines, and services).
 
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
-import { Stroke } from '../Together/types'
 
-const VERSION = 1
+const VERSION = 4
 
 // Create the doc
 export const doc = new Y.Doc()
