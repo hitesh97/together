@@ -824,10 +824,10 @@ onetime@^5.1.2:
   dependencies:
     mimic-fn "^2.1.0"
 
-partykit@^0.0.0-5edde06:
-  version "0.0.0-5edde06"
-  resolved "https://registry.yarnpkg.com/partykit/-/partykit-0.0.0-5edde06.tgz#afdf2f299642b0f2866d0f72a0ddf2f9becb3750"
-  integrity sha512-+QUEsKkXY0pyFhxkImjPfjKsO/Uicx237pffk0RkAHCjxJCE6ogrfMnG5FrCcaIYdr32Y4QZJ/s6wkFR1fUW4Q==
+partykit@^0.0.0-12aec08:
+  version "0.0.0-12aec08"
+  resolved "https://registry.yarnpkg.com/partykit/-/partykit-0.0.0-12aec08.tgz#de8bd85ee1ca7e7fdbc9a095f751ebbb3c21e8ef"
+  integrity sha512-8M+E9A7/Dm7ncNVFDhKc/rzzlpj9nCX2AC2GLyBzQuiHja5HhWU6bYsoyVYEbd6Z5BjF3GFA5r0II4+AupYZrQ==
   dependencies:
     "@edge-runtime/primitives" "^2.0.3"
     clipboardy "^3.0.0"
@@ -1078,10 +1078,10 @@ y-leveldb@^0.1.0:
     level "^6.0.1"
     lib0 "^0.2.31"
 
-y-partykit@^0.0.0-5edde06:
-  version "0.0.0-5edde06"
-  resolved "https://registry.yarnpkg.com/y-partykit/-/y-partykit-0.0.0-5edde06.tgz#2b91a643ec2db07c6599c1945fc7c361ed696883"
-  integrity sha512-z9HOo7Tb0QTkvYiLZZQASXMTyoilSge2ou5/HHLTisFyqdOBP9P6N8fCobLelaWWv11nKEioPs+A549300F73g==
+y-partykit@^0.0.0-12aec08:
+  version "0.0.0-12aec08"
+  resolved "https://registry.yarnpkg.com/y-partykit/-/y-partykit-0.0.0-12aec08.tgz#49d0f246e90b7c2d71c96eb4baff4ad67049d53c"
+  integrity sha512-KWZrxgP56+g1PFZF3keF3y3DVTJhz8M3GxZuIVG7La+lRI1yayKbBPGJ9en+PjTp60lsaAeFVwCAT9lF2Asnhg==
   dependencies:
     lib0 "^0.2.60"
     lodash.debounce "^4.0.8"
