@@ -10,24 +10,102 @@ date.setUTCHours(0, 0, 0, 0)
 const canvases = new WeakMap<Stroke, HTMLCanvasElement>()
 
 export class TogetherApp extends EventEmitter {
+	/**
+	 * The parent element that the canvas is mounted into. We use this
+	 * to calculate the canvas size. It's set in the `mount` method.
+	 *
+	 * @private
+	 */
 	private parent: HTMLElement | null = null
-	private canvas = document.createElement('canvas')
-	private now: number
-	private raf: any
-	private speed = 0.575
-	private startTime = date.getTime()
 
+	/**
+	 * The canvas element used to render the strokes. This is created
+	 * within the app but can be mounted into the DOM using the `mount`
+	 * method.
+	 *
+	 * @private
+	 */
+	private canvas = document.createElement('canvas')
+
+	/**
+	 * The current animation frame request.
+	 *
+	 * @private
+	 */
+	private raf: any
+
+	/**
+	 * The speed of the canvas offset, relative to 1 pixel every 16ms.
+	 *
+	 * @private
+	 */
+	private speed = 0.575
+
+	/**
+	 * The start time of the app. This is used to calculate the Y offset of the
+	 * strokes. This should never change.
+	 *
+	 * @private
+	 * @readonly
+	 */
+	private readonly startTime = date.getTime()
+
+	/**
+	 * The current time.
+	 *
+	 * @private
+	 */
+	private now: number
+
+	/**
+	 * When pointing, this is the stroke ID that we're currently drawing.
+	 *
+	 * @private
+	 */
 	private currentStrokeId: string | null = null
+
+	/**
+	 * This is the map of strokes that we have in the app. Some may be done
+	 * and some may be in progress. This is edited both "internally" and
+	 * "externally", e.g. from a sync service.
+	 *
+	 * @private
+	 */
 	private strokes = new Map<string, Stroke>()
+
+	/**
+	 * The current state of the app.
+	 *
+	 * @private
+	 */
 	private state = 'idle' as 'idle' | 'pointing'
+
+	/**
+	 * The current pointer position in screen space.
+	 *
+	 * @private
+	 */
 	private pointer = { x: 0, y: 0, p: 0.5 }
-	private pointingId = -1
+
+	/**
+	 * Whether we're in pen mode or not. When in pen mode, ignore non-pen events.
+	 *
+	 * @private
+	 */
 	private isPenMode = false
 
+	/**
+	 * The current pointer ID that we're using. This is tricky, should be used to avoid multi-touch.
+	 *
+	 * @private
+	 */
+	private pointingId = -1
+
 	// Styles
-	color: typeof COLORS[number] = COLORS[0]
-	tool: typeof TOOLS[number] = TOOLS[0]
-	size: typeof SIZES[number] = SIZES[1]
+	private color: typeof COLORS[number] = COLORS[0]
+	private tool: typeof TOOLS[number] = TOOLS[0]
+	private inkSize: typeof SIZES[number] = SIZES[1]
+	private eraserSize: typeof SIZES[number] = SIZES[2]
 
 	constructor() {
 		super()
@@ -46,6 +124,22 @@ export class TogetherApp extends EventEmitter {
 		this.parent = parent
 		parent.appendChild(this.canvas)
 		this.onResize()
+	}
+
+	setColor = (color: typeof COLORS[number]) => {
+		this.color = color
+	}
+
+	setTool = (tool: typeof TOOLS[number]) => {
+		this.tool = tool
+	}
+
+	setInkSize = (size: typeof SIZES[number]) => {
+		this.inkSize = size
+	}
+
+	setEraserSize = (size: typeof SIZES[number]) => {
+		this.eraserSize = size
 	}
 
 	/**
@@ -186,7 +280,7 @@ export class TogetherApp extends EventEmitter {
 				id: this.currentStrokeId,
 				createdAt: time - this.startTime,
 				tool: this.tool,
-				size: this.size,
+				size: this.tool === 'ink' ? this.inkSize : this.eraserSize,
 				color: this.color,
 				points: [
 					[

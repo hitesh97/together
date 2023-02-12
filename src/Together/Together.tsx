@@ -15,7 +15,8 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 
 	const [tool, setTool] = useState<typeof TOOLS[number]>(TOOLS[0])
 	const [color, setColor] = useState<typeof COLORS[number]>(COLORS[0])
-	const [size, setSize] = useState<typeof SIZES[number]>(SIZES[1])
+	const [inkSize, setInkSize] = useState<typeof SIZES[number]>(SIZES[1])
+	const [eraserSize, setEraserSize] = useState<typeof SIZES[number]>(SIZES[2])
 
 	useYjs(app)
 
@@ -37,7 +38,7 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 							data-active={tool === value}
 							onPointerDown={() => {
 								setTool(value)
-								app.tool = value
+								app.setTool(value)
 							}}
 						>
 							<img src={`/tool-${value}.svg`} alt={value} />
@@ -55,7 +56,7 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 								data-active={color === value}
 								onPointerDown={() => {
 									setColor(value)
-									app.color = value
+									app.setColor(value)
 								}}
 								style={{ color: value }}
 							></button>
@@ -68,11 +69,16 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 						<button
 							key={value}
 							title={value + ''}
-							data-active={size === value}
+							data-active={(tool === 'ink' ? inkSize : eraserSize) === value}
 							data-size={value}
 							onPointerDown={() => {
-								setSize(value)
-								app.size = value
+								if (tool === 'ink') {
+									setInkSize(value)
+									app.setInkSize(value)
+								} else {
+									setEraserSize(value)
+									app.setEraserSize(value)
+								}
 							}}
 						></button>
 					))}
