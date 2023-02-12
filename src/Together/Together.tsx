@@ -35,7 +35,7 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 							key={value}
 							title={value}
 							data-active={tool === value}
-							onClick={() => {
+							onPointerDown={() => {
 								setTool(value)
 								app.tool = value
 							}}
@@ -53,7 +53,7 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 								key={value}
 								title={value}
 								data-active={color === value}
-								onClick={() => {
+								onPointerDown={() => {
 									setColor(value)
 									app.color = value
 								}}
@@ -70,7 +70,7 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 							title={value + ''}
 							data-active={size === value}
 							data-size={value}
-							onClick={() => {
+							onPointerDown={() => {
 								setSize(value)
 								app.size = value
 							}}

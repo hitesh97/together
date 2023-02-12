@@ -1,7 +1,6 @@
 html,
 * {
 	box-sizing: border-box;
-	touch-action: none;
 }
 
 button {
@@ -30,12 +29,14 @@ button > img {
 	position: absolute;
 	inset: 0px;
 	z-index: 100;
+	touch-action: none;
 }
 
 .canvas {
 	position: absolute;
 	inset: 0px;
 	transform-origin: top left;
+	touch-action: none;
 }
 
 /* -------------------------------------------------- */
@@ -209,9 +210,11 @@ button > img {
 	right: 16px;
 	height: 32px;
 	cursor: pointer;
-	z-index: 300;
+	z-index: 500;
+	pointer-events: all;
 }
 
 .by-tldraw img {
 	height: 100%;
+	pointer-events: none;
 }
