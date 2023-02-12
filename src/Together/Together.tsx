@@ -17,6 +17,9 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 	const [color, setColor] = useState<typeof COLORS[number]>(COLORS[0])
 	const [inkSize, setInkSize] = useState<typeof SIZES[number]>(SIZES[1])
 	const [eraserSize, setEraserSize] = useState<typeof SIZES[number]>(SIZES[2])
+	const [highighterSize, setHighlighterSize] = useState<typeof SIZES[number]>(
+		SIZES[2]
+	)
 
 	useYjs(app)
 
@@ -47,37 +50,57 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
 				</div>
 			</div>
 			<div className="panel panel-right">
-				{tool === 'ink' && (
-					<div className="colors">
-						{COLORS.map((value) => (
-							<button
-								key={value}
-								title={value}
-								data-active={color === value}
-								onPointerDown={() => {
-									setColor(value)
-									app.setColor(value)
-								}}
-								style={{ color: value }}
-							></button>
-						))}
-					</div>
+				{(tool === 'ink' || tool === 'highlighter') && (
+					<>
+						<div className="colors">
+							{COLORS.map((value) => (
+								<button
+									key={value}
+									title={value}
+									data-active={color === value}
+									onPointerDown={() => {
+										setColor(value)
+										app.setColor(value)
+									}}
+									style={{ color: value }}
+								></button>
+							))}
+						</div>
+						<div className="vertical-divider" />
+					</>
 				)}
-				{tool === 'ink' && <div className="vertical-divider" />}
 				<div className="sizes">
 					{SIZES.map((value) => (
 						<button
 							key={value}
 							title={value + ''}
-							data-active={(tool === 'ink' ? inkSize : eraserSize) === value}
+							data-active={
+								(tool === 'ink'
+									? inkSize
+									: tool === 'eraser'
+									? eraserSize
+									: tool === 'highlighter'
+									? highighterSize
+									: null) === value
+							}
 							data-size={value}
 							onPointerDown={() => {
-								if (tool === 'ink') {
-									setInkSize(value)
-									app.setInkSize(value)
-								} else {
-									setEraserSize(value)
-									app.setEraserSize(value)
+								switch (tool) {
+									case 'ink': {
+										setInkSize(value)
+										app.setInkSize(value)
+										break
+									}
+									case 'eraser': {
+										setEraserSize(value)
+										app.setEraserSize(value)
+										break
+									}
+									case 'highlighter': {
+										setHighlighterSize(value)
+										app.setHighlighterSize(value)
+										break
+									}
 								}
 							}}
 						></button>

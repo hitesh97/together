@@ -5,7 +5,7 @@ export type BBox = { minX: number; minY: number; maxX: number; maxY: number }
 export type Stroke = {
 	id: string
 	createdAt: number
-	tool: 'ink' | 'eraser'
+	tool: 'ink' | 'eraser' | 'highlighter'
 	size: number
 	color: string
 	points: Point[]

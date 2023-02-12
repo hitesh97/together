@@ -106,6 +106,7 @@ export class TogetherApp extends EventEmitter {
 	private tool: typeof TOOLS[number] = TOOLS[0]
 	private inkSize: typeof SIZES[number] = SIZES[1]
 	private eraserSize: typeof SIZES[number] = SIZES[2]
+	private highlighterSize: typeof SIZES[number] = SIZES[2]
 
 	constructor() {
 		super()
@@ -140,6 +141,10 @@ export class TogetherApp extends EventEmitter {
 
 	setEraserSize = (size: typeof SIZES[number]) => {
 		this.eraserSize = size
+	}
+
+	setHighlighterSize = (size: typeof SIZES[number]) => {
+		this.highlighterSize = size
 	}
 
 	/**
@@ -280,7 +285,14 @@ export class TogetherApp extends EventEmitter {
 				id: this.currentStrokeId,
 				createdAt: time - this.startTime,
 				tool: this.tool,
-				size: this.tool === 'ink' ? this.inkSize : this.eraserSize,
+				size:
+					this.tool === 'ink'
+						? this.inkSize
+						: this.tool === 'eraser'
+						? this.eraserSize
+						: this.tool === 'highlighter'
+						? this.highlighterSize
+						: 10,
 				color: this.color,
 				points: [
 					[
@@ -331,12 +343,12 @@ export class TogetherApp extends EventEmitter {
 			stroke: { tool, points, size, color, done, pen },
 		} = opts
 
-		const isEraser = tool === 'eraser'
+		const isFatBrush = tool === 'eraser' || tool === 'highlighter'
 
 		const outline = getStroke(points, {
-			size: (isEraser ? size * 2 : size) * DPR,
+			size: (isFatBrush ? size * 2 : size) * DPR,
 			last: done,
-			thinning: isEraser ? -0.65 : 0.65,
+			thinning: isFatBrush ? -0.65 : 0.65,
 			simulatePressure: !pen,
 		})
 
@@ -404,7 +416,7 @@ export class TogetherApp extends EventEmitter {
 			maxY = Math.max(maxY, y)
 		}
 
-		const padding = stroke.size * 2
+		const padding = stroke.size * (stroke.tool === 'ink' ? 2 : 4)
 
 		minX -= padding
 		minY -= padding
@@ -521,7 +533,11 @@ export class TogetherApp extends EventEmitter {
 			.sort((a, b) => a.createdAt - b.createdAt)
 			.forEach((stroke) => {
 				ctx.globalCompositeOperation =
-					stroke.tool === 'eraser' ? 'destination-out' : 'source-over'
+					stroke.tool === 'eraser'
+						? 'destination-out'
+						: stroke.tool === 'highlighter'
+						? 'multiply'
+						: 'source-over'
 				if (stroke.done) {
 					const canvas = this.getCanvasForStroke(stroke)
 					if (canvas) {

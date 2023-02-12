@@ -1,5 +1,5 @@
 export const DPR = window.devicePixelRatio ?? 1
-export const TOOLS = ['ink', 'eraser'] as const
+export const TOOLS = ['ink', 'highlighter', 'eraser'] as const
 export const SIZES = [5, 10, 20, 40]
 export const COLORS = [
 	'#1a1c2c',
