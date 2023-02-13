@@ -394,13 +394,13 @@ export class TogetherApp extends EventEmitter {
       easing: PEN_EASING,
       ...(pen
         ? {
-            thinning: isFatBrush ? -0.65 : 0.65,
+            thinning: isFatBrush && !pen ? -0.65 : 0.65,
             streamline: 0.32,
             smoothing: 0.65,
             simulatePressure: false,
           }
         : {
-            thinning: isFatBrush ? -0.65 : 0.65,
+            thinning: isFatBrush && !pen ? -0.65 : 0.65,
             streamline: 0.5,
             smoothing: 0.62,
             simulatePressure: true,
