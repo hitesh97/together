@@ -687,7 +687,7 @@ export class TogetherApp extends EventEmitter {
           if (canvas) ctx.drawImage(canvas, stroke.bbox.minX, stroke.bbox.minY)
         } else {
           // Paint the foreground
-          this.paintStrokeToCanvas({ ctx, stroke, outline: true })
+          this.paintStrokeToCanvas({ ctx, stroke, outline: stroke.tool === 'ink' })
         }
       })
   }
