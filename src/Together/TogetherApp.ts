@@ -1,8 +1,11 @@
 import getStroke from 'perfect-freehand'
-import { BBox, Stroke, UserCursor } from './types'
-import { COLORS, DPR, PEN_EASING, PI2, SIZES, TOOLS } from './constants'
+import { BBox, Stroke, UserType } from './types'
+import { COLORS, DPR, PEN_EASING, SIZES, TOOLS, USER_TYPES } from './constants'
 import { nanoid } from 'nanoid'
 import { EventEmitter } from 'eventemitter3'
+
+const isAdmin = new URL(window.location.href)?.searchParams?.get('p') === import.meta.env.VITE_ADMIN_PASSWORD
+const userType = isAdmin ? USER_TYPES.Admin : USER_TYPES.User
 
 const date = new Date()
 date.setUTCHours(0, 0, 0, 0)
@@ -351,6 +354,7 @@ export class TogetherApp extends EventEmitter {
           maxY: pointer.y + 1000,
         },
         pen: this.isPenMode,
+        type: userType,
       },
       false
     )
@@ -379,7 +383,7 @@ export class TogetherApp extends EventEmitter {
   private paintStrokeToCanvas(opts: { ctx: CanvasRenderingContext2D; stroke: Stroke }) {
     const {
       ctx,
-      stroke: { tool, points, size, color, done, pen },
+      stroke: { tool, points, size, color, done, pen, type },
     } = opts
 
     const isFatBrush = tool === 'eraser' || tool === 'highlighter'
@@ -414,6 +418,13 @@ export class TogetherApp extends EventEmitter {
       )
     }
     ctx.closePath()
+
+    if (type === USER_TYPES.Admin && tool === 'ink') {
+      ctx.strokeStyle = COLORS[0]
+      ctx.lineWidth = 5 * DPR
+      ctx.stroke()
+    }
+
     ctx.fillStyle = color
     ctx.fill()
   }
@@ -467,7 +478,7 @@ export class TogetherApp extends EventEmitter {
       maxY = Math.max(maxY, y)
     }
 
-    const padding = stroke.size * (stroke.tool === 'ink' ? 2 : 4)
+    const padding = stroke.size * (stroke.tool === 'ink' ? 2 : 8)
 
     minX -= padding
     minY -= padding
@@ -597,6 +608,7 @@ export class TogetherApp extends EventEmitter {
 
     Array.from(strokes.values())
       .sort((a, b) => a.createdAt - b.createdAt)
+      .sort((a, b) => (a.type === UserType.admin ? 1 : -1))
       .forEach((stroke) => {
         ctx.globalCompositeOperation =
           stroke.tool === 'eraser' ? 'destination-out' : stroke.tool === 'highlighter' ? 'multiply' : 'source-over'
