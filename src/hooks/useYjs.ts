@@ -14,11 +14,12 @@ if (foundId === null) {
 }
 
 import * as Y from 'yjs'
-import { yStrokes, provider } from '../utils/y'
+import { yStrokes, provider, awareness } from '../utils/y'
 import { nanoid } from 'nanoid'
 
 export function useYjs(app: TogetherApp) {
   const [status, setStatus] = useState('connecting')
+  const [users, setUsers] = useState(0)
 
   // Handle stroke updates
   useEffect(() => {
@@ -35,7 +36,7 @@ export function useYjs(app: TogetherApp) {
     return () => {
       app.off('updated-stroke', fn)
     }
-  })
+  }, [])
 
   // Handle stroke deletes
   useEffect(() => {
@@ -47,7 +48,7 @@ export function useYjs(app: TogetherApp) {
     return () => {
       app.off('deleted-stroke', fn)
     }
-  })
+  }, [])
 
   // Subscribe to changes in the yStrokes array
   useEffect(() => {
@@ -83,11 +84,11 @@ export function useYjs(app: TogetherApp) {
     }
 
     function handleDisconnect() {
-      console.log('Disconnected')
       clearTimeout(timeout)
-
       provider.off('sync', handleConnect)
       provider.disconnect()
+
+      console.log('Disconnected')
       setStatus('disconnected')
     }
 
@@ -100,6 +101,14 @@ export function useYjs(app: TogetherApp) {
       // If you haven't interacted with the page in 30 seconds, disconnect
       timeout = setTimeout(handleDisconnect, 60 * 1000)
     }
+
+    function handleUserChange() {
+      setUsers(awareness.getStates().size)
+    }
+
+    awareness.setLocalState({ id: ID })
+    awareness.on('change', handleUserChange)
+    handleUserChange()
 
     app.on('updated-stroke', resetIdleTimeout)
 
@@ -117,5 +126,5 @@ export function useYjs(app: TogetherApp) {
     }
   }, [])
 
-  return { status }
+  return { status, users }
 }
