@@ -385,15 +385,53 @@ export class TogetherApp extends EventEmitter {
    *
    * @private
    */
-  private paintStrokeToCanvas(opts: { ctx: CanvasRenderingContext2D; stroke: Stroke; offset: number }) {
+  private paintStrokeToCanvas(opts: { ctx: CanvasRenderingContext2D; stroke: Stroke; outline: boolean }) {
     const {
       ctx,
-      stroke: { tool, points, size, color, done, pen, type },
+      stroke: { color },
+    } = opts
+
+    const outline = this.getFreehandStroke(opts)
+
+    ctx.beginPath()
+    ctx.moveTo(outline[0][0], outline[0][1])
+    for (let i = 1, n = outline.length - 1; i < n; i++) {
+      ctx.quadraticCurveTo(
+        outline[i][0],
+        outline[i][1],
+        (outline[i][0] + outline[i + 1][0]) / 2,
+        (outline[i][1] + outline[i + 1][1]) / 2
+      )
+    }
+    ctx.closePath()
+
+    if (outline) {
+      ctx.strokeStyle = color === COLORS[0] ? COLORS[5] : COLORS[0]
+      ctx.lineWidth = (color === COLORS[0] ? 3 : 5) * DPR
+      ctx.stroke()
+    }
+
+    ctx.fillStyle = color
+    ctx.fill()
+  }
+
+  /**
+   * Render a set of input points onto a canvas.
+   *
+   * @param ctx The context to render into.
+   * @param points The points to render.
+   * @param done Whether the stroke is done or not.
+   *
+   * @private
+   */
+  private getFreehandStroke(opts: { ctx: CanvasRenderingContext2D; stroke: Stroke }) {
+    const {
+      stroke: { tool, points, size, done, pen },
     } = opts
 
     const isFatBrush = tool === 'eraser' || tool === 'highlighter'
 
-    const outline = getStroke(points, {
+    return getStroke(points, {
       size: (isFatBrush ? size * 2 : size) * DPR,
       last: done,
       easing: PEN_EASING,
@@ -411,27 +449,6 @@ export class TogetherApp extends EventEmitter {
             simulatePressure: true,
           }),
     })
-
-    ctx.beginPath()
-    ctx.moveTo(outline[0][0], outline[0][1])
-    for (let i = 1, n = outline.length - 1; i < n; i++) {
-      ctx.quadraticCurveTo(
-        outline[i][0],
-        outline[i][1],
-        (outline[i][0] + outline[i + 1][0]) / 2,
-        (outline[i][1] + outline[i + 1][1]) / 2
-      )
-    }
-    ctx.closePath()
-
-    if (type === USER_TYPES.Admin && tool === 'ink') {
-      ctx.strokeStyle = COLORS[0]
-      ctx.lineWidth = 5 * DPR
-      ctx.stroke()
-    }
-
-    ctx.fillStyle = color
-    ctx.fill()
   }
 
   private getCanvasForStroke(stroke: Stroke) {
@@ -453,7 +470,12 @@ export class TogetherApp extends EventEmitter {
     }
 
     ctx.translate(-bbox.minX, -bbox.minY)
-    this.paintStrokeToCanvas({ ctx, stroke, offset: 0 })
+
+    if (stroke.type === UserType.admin) {
+      this.paintStrokeToCanvas({ ctx, stroke, outline: true })
+    }
+
+    this.paintStrokeToCanvas({ ctx, stroke, outline: false })
 
     canvases.set(stroke, cvs)
 
@@ -614,23 +636,65 @@ export class TogetherApp extends EventEmitter {
 
     const offset = this.getYOffsetFromTime(this.now)
 
-    Array.from(strokes.values())
+    // Separate the strokes into regular and admin strokes
+    const regularStrokes: Stroke[] = []
+    const adminStrokes: Stroke[] = []
+
+    strokes.forEach((stroke) => {
+      switch (stroke.type) {
+        case UserType.admin: {
+          adminStrokes.push(stroke)
+          break
+        }
+        default: {
+          regularStrokes.push(stroke)
+        }
+      }
+    })
+
+    regularStrokes
       .sort((a, b) => a.createdAt - b.createdAt)
-      .sort((a, b) => (a.type === UserType.admin ? 1 : -1))
       .forEach((stroke) => {
+        // Translate the canvas to the correct position
+        ctx.resetTransform()
+        ctx.translate(0, this.getYOffsetFromTime(stroke.createdAt) - offset)
+
+        // Eraser is destination-out, highlighter is multiply, everything else is source-over
         ctx.globalCompositeOperation =
           stroke.tool === 'eraser' ? 'destination-out' : stroke.tool === 'highlighter' ? 'multiply' : 'source-over'
+
         if (stroke.done) {
+          // Get (or create) a cached image for the stroke
           const canvas = this.getCanvasForStroke(stroke)
-          if (canvas) {
-            ctx.resetTransform()
-            ctx.translate(0, this.getYOffsetFromTime(stroke.createdAt) - offset)
-            ctx.drawImage(canvas, stroke.bbox.minX, stroke.bbox.minY)
-          }
+          // Stamp it to the canvas
+          if (canvas) ctx.drawImage(canvas, stroke.bbox.minX, stroke.bbox.minY)
         } else {
-          ctx.resetTransform()
-          ctx.translate(0, this.getYOffsetFromTime(stroke.createdAt) - offset)
-          this.paintStrokeToCanvas({ ctx, stroke, offset: 0 })
+          // Paint the foreground
+          this.paintStrokeToCanvas({ ctx, stroke, outline: false })
+        }
+      })
+
+    // Now paint all of the admin strokes (on top of the others)
+    // which are completed.
+    adminStrokes
+      .sort((a, b) => a.createdAt - b.createdAt)
+      .forEach((stroke) => {
+        // Translate the canvas to the correct position
+        ctx.resetTransform()
+        ctx.translate(0, this.getYOffsetFromTime(stroke.createdAt) - offset)
+
+        // Eraser is destination-out, highlighter is multiply, everything else is source-over
+        ctx.globalCompositeOperation =
+          stroke.tool === 'eraser' ? 'destination-out' : stroke.tool === 'highlighter' ? 'multiply' : 'source-over'
+
+        if (stroke.done) {
+          // Get (or create) a cached image for the stroke
+          const canvas = this.getCanvasForStroke(stroke)
+          // Stamp it to the canvas
+          if (canvas) ctx.drawImage(canvas, stroke.bbox.minX, stroke.bbox.minY)
+        } else {
+          // Paint the foreground
+          this.paintStrokeToCanvas({ ctx, stroke, outline: true })
         }
       })
   }
