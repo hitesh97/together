@@ -72,12 +72,20 @@ export function useYjs(app: TogetherApp) {
   // on the window to disconnect automatically when the
   // tab or window closes.
   useEffect(() => {
+    function handleUserChange() {
+      setUsers(awareness.getStates().size)
+    }
+
     function handleConnect() {
       console.log('Connected')
 
       yStrokes.forEach((yStroke) => {
         app.putStroke(yStroke.toJSON() as Stroke, true)
       })
+
+      awareness.setLocalState({ id: ID })
+      awareness.on('change', handleUserChange)
+      handleUserChange()
 
       setStatus('connected')
       resetIdleTimeout()
@@ -107,14 +115,6 @@ export function useYjs(app: TogetherApp) {
       // If you haven't interacted with the page in 30 seconds, disconnect
       timeout = setTimeout(handleDisconnect, 30 * 1000)
     }
-
-    function handleUserChange() {
-      setUsers(awareness.getStates().size)
-    }
-
-    awareness.setLocalState({ id: ID })
-    awareness.on('change', handleUserChange)
-    handleUserChange()
 
     app.on('updated-stroke', resetIdleTimeout)
 
