@@ -43,7 +43,7 @@ export class TogetherApp extends EventEmitter {
    *
    * @private
    */
-  private speed = 0.612
+  private speed = 0.5
 
   /**
    * The start time of the app. This is used to calculate the Y offset of the
@@ -468,7 +468,7 @@ export class TogetherApp extends EventEmitter {
 
     ctx.translate(-bbox.minX, -bbox.minY)
 
-    this.paintStrokeToCanvas({ ctx, stroke, outline: stroke.type === UserType.admin })
+    this.paintStrokeToCanvas({ ctx, stroke, outline: stroke.tool === 'ink' && stroke.type === UserType.admin })
 
     canvases.set(stroke, cvs)
 
