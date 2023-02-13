@@ -13,7 +13,7 @@ export interface TogetherProps {
 export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
   const { app, rContainer, tool, setTool, size, color, setSize, setColor } = useTogether({ onMount, onStrokeUpdate })
 
-  const { users, status } = useYjs(app)
+  const { status } = useYjs(app)
 
   return (
     <div className="app">
@@ -63,11 +63,7 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
         </div>
       </div>
       <div className="lower-left">
-        {status === 'disconnected'
-          ? 'Disconnected, please refresh to rejoin.'
-          : status === 'connecting'
-          ? 'Connecting...'
-          : `✓ / ${users}`}
+        {status === 'disconnected' ? 'Disconnected' : status === 'connecting' ? 'Connecting...' : `✓`}
       </div>
       <div className="lower-right">
         <a href="https://twitter.com/tldraw" target="_blank" rel="nofollow noopener">

@@ -14,12 +14,11 @@ if (foundId === null) {
 }
 
 import * as Y from 'yjs'
-import { yStrokes, provider, yUsers } from '../utils/y'
+import { yStrokes, provider } from '../utils/y'
 import { nanoid } from 'nanoid'
 
 export function useYjs(app: TogetherApp) {
   const [status, setStatus] = useState('connecting')
-  const [users, setUsers] = useState<number>(1)
 
   // Handle stroke updates
   useEffect(() => {
@@ -68,31 +67,12 @@ export function useYjs(app: TogetherApp) {
     }
   }, [])
 
-  // Subscribe to changes in the yUsers array
-  useEffect(() => {
-    function handleChange() {
-      setUsers(yUsers.length)
-    }
-
-    yUsers.observe(handleChange)
-
-    return () => {
-      yUsers.unobserve(handleChange)
-    }
-  }, [])
-
   // Handle the provider connection. Include a listener
   // on the window to disconnect automatically when the
   // tab or window closes.
   useEffect(() => {
     function handleConnect() {
       console.log('Connected')
-      const index = yUsers.toArray().indexOf(ID)
-      if (index === -1) {
-        yUsers.push([ID])
-      }
-
-      setUsers(yUsers.length)
 
       yStrokes.forEach((yStroke) => {
         app.putStroke(yStroke.toJSON() as Stroke, true)
@@ -105,10 +85,6 @@ export function useYjs(app: TogetherApp) {
     function handleDisconnect() {
       console.log('Disconnected')
       clearTimeout(timeout)
-      const index = yUsers.toArray().indexOf(ID)
-      if (index > -1) {
-        yUsers.delete(index, 1)
-      }
 
       provider.off('sync', handleConnect)
       provider.disconnect()
@@ -141,5 +117,5 @@ export function useYjs(app: TogetherApp) {
     }
   }, [])
 
-  return { status, users }
+  return { status }
 }
