@@ -223,7 +223,7 @@ button > img {
 
 .lower-right {
   position: absolute;
-  bottom: 8px;
+  bottom: 5px;
   right: 8px;
   cursor: pointer;
   z-index: 500;
@@ -249,10 +249,9 @@ button > img {
 .tldraw {
   height: 34px;
   pointer-events: none;
-  margin-right: -2px;
 }
 
 .partykit {
-  height: 19px;
+  height: 18px;
   pointer-events: none;
 }

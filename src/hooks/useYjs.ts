@@ -84,6 +84,12 @@ export function useYjs(app: TogetherApp) {
     }
 
     function handleDisconnect() {
+      // only auto disconnect if there are more than 50 users
+      if (awareness.getStates().size < 50) {
+        resetIdleTimeout()
+        return
+      }
+
       clearTimeout(timeout)
       provider.off('sync', handleConnect)
       provider.disconnect()
@@ -99,7 +105,7 @@ export function useYjs(app: TogetherApp) {
       }
 
       // If you haven't interacted with the page in 30 seconds, disconnect
-      timeout = setTimeout(handleDisconnect, 60 * 1000)
+      timeout = setTimeout(handleDisconnect, 30 * 1000)
     }
 
     function handleUserChange() {
