@@ -198,8 +198,11 @@ export class TogetherApp extends EventEmitter {
       }
 
       // Only add the bake stroke if it's on screen
-      if (stroke.bbox.maxY - this.getYOffsetFromTime(this.now) > 0) {
+      const offset = this.getCurrentYOffsetForStroke(stroke)
+      if (stroke.done && stroke.bbox.maxY - offset > 0) {
         this.strokes.set(stroke.id, stroke)
+      } else {
+        // stroke is off screen
       }
     } else {
       // Or else add it to the rendering strokes
@@ -285,7 +288,8 @@ export class TogetherApp extends EventEmitter {
           const stroke = strokes.get(currentStrokeId)
           if (stroke) {
             const { pointer } = this
-            stroke.points = [[pointer.x, pointer.y, pointer.p]]
+            const offset = this.getCurrentYOffsetForStroke(stroke)
+            stroke.points = [[pointer.x, pointer.y + -offset, pointer.p]]
           }
         }
 
@@ -329,12 +333,12 @@ export class TogetherApp extends EventEmitter {
     const { pointer } = this
 
     this.currentStrokeId = nanoid()
-    const time = Date.now()
+    const time = this.now
 
     this.putStroke(
       {
         id: this.currentStrokeId,
-        createdAt: time - this.startTime,
+        createdAt: time,
         tool: this.tool,
         size:
           this.tool === 'ink'
@@ -345,7 +349,7 @@ export class TogetherApp extends EventEmitter {
             ? this.highlighterSize
             : 10,
         color: this.tool === 'ink' ? this.inkColor : this.tool === 'highlighter' ? this.highlighterColor : 'black',
-        points: [[pointer.x, pointer.y + this.getYOffsetFromTime(Date.now()), pointer.p]],
+        points: [[pointer.x, pointer.y, pointer.p]],
         done: false,
         bbox: {
           minX: pointer.x,
@@ -369,6 +373,7 @@ export class TogetherApp extends EventEmitter {
     stroke.done = true
     stroke.bbox = this.getBoundingBoxFromStroke(stroke)
     this.putStroke(stroke, false)
+    this.emit('create-stroke', stroke)
   }
 
   /**
@@ -380,7 +385,7 @@ export class TogetherApp extends EventEmitter {
    *
    * @private
    */
-  private paintStrokeToCanvas(opts: { ctx: CanvasRenderingContext2D; stroke: Stroke }) {
+  private paintStrokeToCanvas(opts: { ctx: CanvasRenderingContext2D; stroke: Stroke; offset: number }) {
     const {
       ctx,
       stroke: { tool, points, size, color, done, pen, type },
@@ -448,8 +453,7 @@ export class TogetherApp extends EventEmitter {
     }
 
     ctx.translate(-bbox.minX, -bbox.minY)
-
-    this.paintStrokeToCanvas({ ctx, stroke })
+    this.paintStrokeToCanvas({ ctx, stroke, offset: 0 })
 
     canvases.set(stroke, cvs)
 
@@ -492,6 +496,10 @@ export class TogetherApp extends EventEmitter {
     return (time - this.startTime) / (16 / this.speed)
   }
 
+  private getCurrentYOffsetForStroke(stroke: Stroke) {
+    return this.getYOffsetFromTime(this.now) - this.getYOffsetFromTime(stroke.createdAt)
+  }
+
   private isPenEvent(event: React.PointerEvent | PointerEvent): boolean {
     return (
       // if it's a pen, then it should support pressure
@@ -518,9 +526,6 @@ export class TogetherApp extends EventEmitter {
     // Is this a 60fps frame?
     const is60fpsFrame = elapsed > 16
 
-    // Calculate the offset from the current time
-    const offset = this.getYOffsetFromTime(now)
-
     if (this.state === 'pointing' && this.currentStrokeId) {
       const stroke = this.strokes.get(this.currentStrokeId)
       if (!stroke) return
@@ -532,6 +537,7 @@ export class TogetherApp extends EventEmitter {
 
       // Add the current point to the current stroke (even if we're between frames)
       const { pointer } = this
+      const offset = this.getCurrentYOffsetForStroke(stroke)
       stroke.points.push([pointer.x, pointer.y + offset, pointer.p])
 
       // only update the shape if it's a 60fps frame
@@ -560,6 +566,7 @@ export class TogetherApp extends EventEmitter {
       // cull shapes that are offscreen
       this.strokes.forEach((stroke) => {
         // If the stroke is done and is off screen...
+        const offset = this.getCurrentYOffsetForStroke(stroke)
         if (stroke.done && stroke.bbox.maxY - offset < 0) {
           // Ffr Safari, shrink the canvas to free it up
           const canvas = canvases.get(stroke)
@@ -604,7 +611,8 @@ export class TogetherApp extends EventEmitter {
 
     ctx.resetTransform()
     ctx.clearRect(0, 0, cvs.width, cvs.height)
-    ctx.translate(0, -this.getYOffsetFromTime(Date.now()))
+
+    const offset = this.getYOffsetFromTime(this.now)
 
     Array.from(strokes.values())
       .sort((a, b) => a.createdAt - b.createdAt)
@@ -615,10 +623,14 @@ export class TogetherApp extends EventEmitter {
         if (stroke.done) {
           const canvas = this.getCanvasForStroke(stroke)
           if (canvas) {
+            ctx.resetTransform()
+            ctx.translate(0, this.getYOffsetFromTime(stroke.createdAt) - offset)
             ctx.drawImage(canvas, stroke.bbox.minX, stroke.bbox.minY)
           }
         } else {
-          this.paintStrokeToCanvas({ ctx, stroke })
+          ctx.resetTransform()
+          ctx.translate(0, this.getYOffsetFromTime(stroke.createdAt) - offset)
+          this.paintStrokeToCanvas({ ctx, stroke, offset: 0 })
         }
       })
   }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSupabase } from '../hooks/useSupabase'
 import { useYjs } from '../hooks/useYjs'
 import { COLORS, SIZES, TOOLS } from './constants'
 import { TogetherApp } from './TogetherApp'
@@ -14,6 +15,8 @@ export function Together({ onMount, onStrokeUpdate }: TogetherProps) {
   const { app, rContainer, tool, setTool, size, color, setSize, setColor } = useTogether({ onMount, onStrokeUpdate })
 
   const { status, users } = useYjs(app)
+
+  // useSupabase(app)
 
   return (
     <div className="app">

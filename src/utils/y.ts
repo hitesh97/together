@@ -2,7 +2,7 @@ import * as Y from 'yjs'
 import YProvider from 'y-partykit/provider'
 
 // if the process is in development, use "DEVELOPMENT_${version}"
-const VERSION = (process.env.NODE_ENV === 'development' ? 'd' : '') + 5
+const VERSION = (import.meta.env.PROD ? '' : 'd') + 6
 
 // Create the doc
 export const doc = new Y.Doc()
