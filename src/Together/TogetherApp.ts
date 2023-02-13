@@ -1,11 +1,12 @@
 import getStroke from 'perfect-freehand'
 import { BBox, Stroke, UserType } from './types'
-import { COLORS, DPR, PEN_EASING, SIZES, TOOLS, USER_TYPES } from './constants'
+import { COLORS, DPR, PEN_EASING, SIZES, TOOLS } from './constants'
 import { nanoid } from 'nanoid'
 import { EventEmitter } from 'eventemitter3'
 
-const isAdmin = new URL(window.location.href)?.searchParams?.get('p') === import.meta.env.VITE_ADMIN_PASSWORD
-const userType = isAdmin ? USER_TYPES.Admin : USER_TYPES.User
+const adminPw = new URL(window.location.href)?.searchParams?.get('p')
+const isAdmin = adminPw !== null && adminPw === import.meta.env.VITE_ADMIN_PASSWORD
+const userType = isAdmin ? UserType.admin : UserType.user
 
 const date = new Date()
 date.setUTCHours(0, 0, 0, 0)
@@ -389,19 +390,15 @@ export class TogetherApp extends EventEmitter {
     const {
       ctx,
       stroke: { color },
+      outline,
     } = opts
 
-    const outline = this.getFreehandStroke(opts)
+    const pts = this.getFreehandStroke(opts)
 
     ctx.beginPath()
-    ctx.moveTo(outline[0][0], outline[0][1])
-    for (let i = 1, n = outline.length - 1; i < n; i++) {
-      ctx.quadraticCurveTo(
-        outline[i][0],
-        outline[i][1],
-        (outline[i][0] + outline[i + 1][0]) / 2,
-        (outline[i][1] + outline[i + 1][1]) / 2
-      )
+    ctx.moveTo(pts[0][0], pts[0][1])
+    for (let i = 1, n = pts.length - 1; i < n; i++) {
+      ctx.quadraticCurveTo(pts[i][0], pts[i][1], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2)
     }
     ctx.closePath()
 
@@ -471,11 +468,7 @@ export class TogetherApp extends EventEmitter {
 
     ctx.translate(-bbox.minX, -bbox.minY)
 
-    if (stroke.type === UserType.admin) {
-      this.paintStrokeToCanvas({ ctx, stroke, outline: true })
-    }
-
-    this.paintStrokeToCanvas({ ctx, stroke, outline: false })
+    this.paintStrokeToCanvas({ ctx, stroke, outline: stroke.type === UserType.admin })
 
     canvases.set(stroke, cvs)
 

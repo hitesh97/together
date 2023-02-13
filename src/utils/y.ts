@@ -8,15 +8,9 @@ const VERSION = (import.meta.env.PROD ? '' : 'd') + 6
 export const doc = new Y.Doc()
 
 // Create a websocket provider (but don't connect just yet)
-export const provider = new YProvider(
-  'tldraw-together.threepointone.partykit.dev',
-  // "localhost:1999",
-  `together-${VERSION}`,
-  doc,
-  {
-    connect: false,
-  }
-)
+export const provider = new YProvider('tldraw-together.threepointone.partykit.dev', `together-${VERSION}`, doc, {
+  connect: false,
+})
 
 // Export the provider's awareness API
 export const awareness = provider.awareness

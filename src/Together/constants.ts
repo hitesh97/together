@@ -20,11 +20,6 @@ export const COLORS = [
   '#333c57',
 ] as const
 
-export const USER_TYPES = {
-  User: 0,
-  Admin: 1,
-}
-
 export const SIN = Math.sin
 export const PI = Math.PI
 export const PI2 = PI * 2
