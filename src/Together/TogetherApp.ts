@@ -43,7 +43,7 @@ export class TogetherApp extends EventEmitter {
    *
    * @private
    */
-  private speed = 0.3
+  private speed = 0.1
 
   /**
    * The start time of the app. This is used to calculate the Y offset of the
